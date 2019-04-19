@@ -242,7 +242,7 @@ static inline xor_h0h1h2_t xor16_get_just_h0_h1_h2(uint64_t hash,
 struct xor_keyindex_s {
   uint64_t hash;
   uint64_t index;
-  xor_h0h1h2_t hashes;
+//  xor_h0h1h2_t hashes;
 };
 
 typedef struct xor_keyindex_s xor_keyindex_t;
@@ -291,14 +291,15 @@ bool xor8_populate(const uint64_t *keys, size_t size, xor8_t *filter) {
     size_t stack_size = 0;
     while (Qsize > 0) {
       size_t index = Q[--Qsize];
-      if (sets[index].count == 0)
+      if (sets[index].count == 0) {
         continue;
+      } 
       // assert(sets[index].count == 1);
       uint64_t hash = sets[index].xormask;
       stack[stack_size].hash = hash;
       stack[stack_size].index = index;
       xor_h0h1h2_t hashes = xor8_get_just_h0_h1_h2(hash, filter);
-      stack[stack_size].hashes = hashes;
+ //     stack[stack_size].hashes = hashes;
       stack_size++;
       sets[hashes.h0].xormask ^= hash;
       sets[hashes.h0].count--;
@@ -326,10 +327,11 @@ bool xor8_populate(const uint64_t *keys, size_t size, xor8_t *filter) {
   size_t stack_size = size;
   while (stack_size > 0) {
     xor_keyindex_t ki = stack[--stack_size];
+    xor_h0h1h2_t hashes = xor8_get_just_h0_h1_h2(ki.hash, filter);
     filter->fingerprints[ki.index] = 0;
     filter->fingerprints[ki.index] =
-        xor_fingerprint(ki.hash) ^ filter->fingerprints[ki.hashes.h0] ^
-        filter->fingerprints[ki.hashes.h1] ^ filter->fingerprints[ki.hashes.h2];
+        xor_fingerprint(ki.hash) ^ filter->fingerprints[hashes.h0] ^
+        filter->fingerprints[hashes.h1] ^ filter->fingerprints[hashes.h2];
     // assert(xor8_contain(ki.key, filter));
   }
   free(sets);
@@ -389,7 +391,7 @@ bool xor16_populate(const uint64_t *keys, size_t size, xor16_t *filter) {
       stack[stack_size].hash = hash;
       stack[stack_size].index = index;
       xor_h0h1h2_t hashes = xor16_get_just_h0_h1_h2(hash, filter);
-      stack[stack_size].hashes = hashes;
+   //   stack[stack_size].hashes = hashes;
       stack_size++;
       sets[hashes.h0].xormask ^= hash;
       sets[hashes.h0].count--;
@@ -417,10 +419,11 @@ bool xor16_populate(const uint64_t *keys, size_t size, xor16_t *filter) {
   size_t stack_size = size;
   while (stack_size > 0) {
     xor_keyindex_t ki = stack[--stack_size];
+    xor_h0h1h2_t hashes = xor16_get_just_h0_h1_h2(ki.hash, filter);
     filter->fingerprints[ki.index] = 0;
     filter->fingerprints[ki.index] =
-        xor_fingerprint(ki.hash) ^ filter->fingerprints[ki.hashes.h0] ^
-        filter->fingerprints[ki.hashes.h1] ^ filter->fingerprints[ki.hashes.h2];
+        xor_fingerprint(ki.hash) ^ filter->fingerprints[hashes.h0] ^
+        filter->fingerprints[hashes.h1] ^ filter->fingerprints[hashes.h2];
     // assert(xor16_contain(ki.key, filter));
   }
   free(sets);
