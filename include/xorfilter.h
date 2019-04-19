@@ -91,7 +91,7 @@ typedef struct xor16_s {
       *fingerprints; // after xor16_allocate, will point to 3*blockLength values
 } xor16_t;
 
-// Report if the item is in the set, with false positive rate.
+// Report if the key is in the set, with false positive rate.
 bool xor16_contain(uint64_t key, const xor16_t *filter) {
   uint64_t hash = xor_mix_split(key, filter->seed);
   uint16_t f = xor_fingerprint(hash);
