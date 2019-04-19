@@ -16,7 +16,7 @@ or other data structures, you need to hash them first to a 64-bit integer. It
 is not important to have a good hash function, but collision should be unlikely
 (~1/2^64).
 
-You can use either the xor8 filter...
+You can use either the xor8 filter... (false-positive rate of about 0.3 %)
 
 ```
 uint64_t *big_set = ...
@@ -29,7 +29,7 @@ xor8_contain(somerandomvalue, &filter); // will be false with high probability
 xor8_free(filter);
 ```
 
-Or the xor16 filter (larger but more accurate)...
+Or the xor16 filter (larger but more accurate)... (vanishingly small false-positive rate)
 
 ```
 uint64_t *big_set = ...
@@ -55,3 +55,16 @@ typedef struct xor16_s {
 ```
 
 To run tests: `make test`.
+
+
+```
+$ make test
+./unit
+testing xor16
+fpp 0.0000154000 (estimated)
+bits per entry 19.7
+testing xor8
+fpp 0.0039015000 (estimated)
+bits per entry 9.9
+
+
