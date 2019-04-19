@@ -18,7 +18,7 @@ is not important to have a good hash function, but collision should be unlikely
 
 You can use either the xor8 filter... (false-positive rate of about 0.3 %)
 
-```
+```C
 uint64_t *big_set = ...
 xor8_t filter;
 xor8_allocate(size, &filter);
@@ -31,7 +31,7 @@ xor8_free(filter);
 
 Or the xor16 filter (larger but more accurate)... (vanishingly small false-positive rate)
 
-```
+```C
 uint64_t *big_set = ...
 xor16_t filter;
 xor16_allocate(size, &filter);
