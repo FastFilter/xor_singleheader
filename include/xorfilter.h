@@ -189,6 +189,27 @@ static inline xor_hashes_t xor8_get_h0_h1_h2(uint64_t k, const xor8_t *filter) {
   return answer;
 }
 
+struct xor_h0h1h2_s {
+  uint32_t h0;
+  uint32_t h1;
+  uint32_t h2;
+};
+
+typedef struct xor_h0h1h2_s xor_h0h1h2_t;
+
+
+static inline xor_h0h1h2_t xor8_get_just_h0_h1_h2(uint64_t hash, const xor8_t *filter) {
+  xor_h0h1h2_t answer;
+  uint32_t r0 = (uint32_t)hash;
+  uint32_t r1 = (uint32_t)xor_rotl64(hash, 21);
+  uint32_t r2 = (uint32_t)xor_rotl64(hash, 42);
+
+  answer.h0 = xor_reduce(r0, filter->blockLength);
+  answer.h1 = xor_reduce(r1, filter->blockLength) + filter->blockLength;
+  answer.h2 = xor_reduce(r2, filter->blockLength) + 2 * filter->blockLength;
+  return answer;
+}
+
 static inline xor_hashes_t xor16_get_h0_h1_h2(uint64_t k,
                                               const xor16_t *filter) {
   uint64_t hash = xor_mix_split(k, filter->seed);
@@ -204,10 +225,24 @@ static inline xor_hashes_t xor16_get_h0_h1_h2(uint64_t k,
   return answer;
 }
 
+
+static inline xor_h0h1h2_t xor16_get_just_h0_h1_h2(uint64_t hash,
+                                              const xor16_t *filter) {
+  xor_h0h1h2_t answer;
+  uint32_t r0 = (uint32_t)hash;
+  uint32_t r1 = (uint32_t)xor_rotl64(hash, 21);
+  uint32_t r2 = (uint32_t)xor_rotl64(hash, 42);
+
+  answer.h0 = xor_reduce(r0, filter->blockLength);
+  answer.h1 = xor_reduce(r1, filter->blockLength) + filter->blockLength;
+  answer.h2 = xor_reduce(r2, filter->blockLength) + 2 * filter->blockLength;
+  return answer;
+}
+
 struct xor_keyindex_s {
-  uint64_t key;
+  uint64_t hash;
   uint64_t index;
-  xor_hashes_t hashes;
+  xor_h0h1h2_t hashes;
 };
 
 typedef struct xor_keyindex_s xor_keyindex_t;
@@ -240,11 +275,11 @@ bool xor8_populate(const uint64_t *keys, size_t size, xor8_t *filter) {
     for (size_t i = 0; i < size; i++) {
       uint64_t key = keys[i];
       xor_hashes_t hs = xor8_get_h0_h1_h2(key, filter);
-      sets[hs.h0].xormask ^= key;
+      sets[hs.h0].xormask ^= hs.h;
       sets[hs.h0].count++;
-      sets[hs.h1].xormask ^= key;
+      sets[hs.h1].xormask ^= hs.h;
       sets[hs.h1].count++;
-      sets[hs.h2].xormask ^= key;
+      sets[hs.h2].xormask ^= hs.h;
       sets[hs.h2].count++;
     }
     // scan for values with a count of one
@@ -259,17 +294,17 @@ bool xor8_populate(const uint64_t *keys, size_t size, xor8_t *filter) {
       if (sets[index].count == 0)
         continue;
       // assert(sets[index].count == 1);
-      uint64_t key = sets[index].xormask;
-      stack[stack_size].key = key;
+      uint64_t hash = sets[index].xormask;
+      stack[stack_size].hash = hash;
       stack[stack_size].index = index;
-      xor_hashes_t hashes = xor8_get_h0_h1_h2(key, filter);
+      xor_h0h1h2_t hashes = xor8_get_just_h0_h1_h2(hash, filter);
       stack[stack_size].hashes = hashes;
       stack_size++;
-      sets[hashes.h0].xormask ^= key;
+      sets[hashes.h0].xormask ^= hash;
       sets[hashes.h0].count--;
-      sets[hashes.h1].xormask ^= key;
+      sets[hashes.h1].xormask ^= hash;
       sets[hashes.h1].count--;
-      sets[hashes.h2].xormask ^= key;
+      sets[hashes.h2].xormask ^= hash;
       sets[hashes.h2].count--;
       if (sets[hashes.h0].count == 1) {
         Q[Qsize++] = hashes.h0;
@@ -293,7 +328,7 @@ bool xor8_populate(const uint64_t *keys, size_t size, xor8_t *filter) {
     xor_keyindex_t ki = stack[--stack_size];
     filter->fingerprints[ki.index] = 0;
     filter->fingerprints[ki.index] =
-        xor_fingerprint(ki.hashes.h) ^ filter->fingerprints[ki.hashes.h0] ^
+        xor_fingerprint(ki.hash) ^ filter->fingerprints[ki.hashes.h0] ^
         filter->fingerprints[ki.hashes.h1] ^ filter->fingerprints[ki.hashes.h2];
     // assert(xor8_contain(ki.key, filter));
   }
@@ -331,11 +366,11 @@ bool xor16_populate(const uint64_t *keys, size_t size, xor16_t *filter) {
     for (size_t i = 0; i < size; i++) {
       uint64_t key = keys[i];
       xor_hashes_t hs = xor16_get_h0_h1_h2(key, filter);
-      sets[hs.h0].xormask ^= key;
+      sets[hs.h0].xormask ^= hs.h;
       sets[hs.h0].count++;
-      sets[hs.h1].xormask ^= key;
+      sets[hs.h1].xormask ^= hs.h;
       sets[hs.h1].count++;
-      sets[hs.h2].xormask ^= key;
+      sets[hs.h2].xormask ^= hs.h;
       sets[hs.h2].count++;
     }
     // scan for values with a count of one
@@ -350,17 +385,17 @@ bool xor16_populate(const uint64_t *keys, size_t size, xor16_t *filter) {
       if (sets[index].count == 0)
         continue;
       // assert(sets[index].count == 1);
-      uint64_t key = sets[index].xormask;
-      stack[stack_size].key = key;
+      uint64_t hash = sets[index].xormask;
+      stack[stack_size].hash = hash;
       stack[stack_size].index = index;
-      xor_hashes_t hashes = xor16_get_h0_h1_h2(key, filter);
+      xor_h0h1h2_t hashes = xor16_get_just_h0_h1_h2(hash, filter);
       stack[stack_size].hashes = hashes;
       stack_size++;
-      sets[hashes.h0].xormask ^= key;
+      sets[hashes.h0].xormask ^= hash;
       sets[hashes.h0].count--;
-      sets[hashes.h1].xormask ^= key;
+      sets[hashes.h1].xormask ^= hash;
       sets[hashes.h1].count--;
-      sets[hashes.h2].xormask ^= key;
+      sets[hashes.h2].xormask ^= hash;
       sets[hashes.h2].count--;
       if (sets[hashes.h0].count == 1) {
         Q[Qsize++] = hashes.h0;
@@ -384,7 +419,7 @@ bool xor16_populate(const uint64_t *keys, size_t size, xor16_t *filter) {
     xor_keyindex_t ki = stack[--stack_size];
     filter->fingerprints[ki.index] = 0;
     filter->fingerprints[ki.index] =
-        xor_fingerprint(ki.hashes.h) ^ filter->fingerprints[ki.hashes.h0] ^
+        xor_fingerprint(ki.hash) ^ filter->fingerprints[ki.hashes.h0] ^
         filter->fingerprints[ki.hashes.h1] ^ filter->fingerprints[ki.hashes.h2];
     // assert(xor16_contain(ki.key, filter));
   }

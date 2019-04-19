@@ -75,6 +75,6 @@ bool testxor16() {
 }
 
 int main() {
-  testxor16();
   testxor8();
+  testxor16();
 }
