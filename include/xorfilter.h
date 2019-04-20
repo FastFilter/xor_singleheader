@@ -1,14 +1,12 @@
 #ifndef XORFILTER_H
 #define XORFILTER_H
 
-#include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 /**
  * We assume that you have a large set of 64-bit integers
  * and you want a data structure to do membership tests using
@@ -70,7 +68,7 @@ typedef struct xor8_s {
 } xor8_t;
 
 // Report if the key is in the set, with false positive rate.
-bool xor8_contain(uint64_t key, const xor8_t *filter) {
+static inline bool xor8_contain(uint64_t key, const xor8_t *filter) {
   uint64_t hash = xor_mix_split(key, filter->seed);
   uint8_t f = xor_fingerprint(hash);
   uint32_t r0 = (uint32_t)hash;
@@ -92,7 +90,7 @@ typedef struct xor16_s {
 } xor16_t;
 
 // Report if the key is in the set, with false positive rate.
-bool xor16_contain(uint64_t key, const xor16_t *filter) {
+static inline bool xor16_contain(uint64_t key, const xor16_t *filter) {
   uint64_t hash = xor_mix_split(key, filter->seed);
   uint16_t f = xor_fingerprint(hash);
   uint32_t r0 = (uint32_t)hash;
@@ -108,7 +106,7 @@ bool xor16_contain(uint64_t key, const xor16_t *filter) {
 
 // allocate enough capacity for a set containing up to 'size' elements
 // caller is responsible to call xor8_free(filter)
-bool xor8_allocate(uint32_t size, xor8_t *filter) {
+static inline bool xor8_allocate(uint32_t size, xor8_t *filter) {
   size_t capacity = 32 + 1.23 * size;
   capacity = capacity / 3 * 3;
   filter->fingerprints = (uint8_t *)malloc(capacity * sizeof(uint8_t));
@@ -122,7 +120,7 @@ bool xor8_allocate(uint32_t size, xor8_t *filter) {
 
 // allocate enough capacity for a set containing up to 'size' elements
 // caller is responsible to call xor8_free(filter)
-bool xor16_allocate(size_t size, xor16_t *filter) {
+static inline bool xor16_allocate(size_t size, xor16_t *filter) {
   size_t capacity = 32 + 1.23 * size;
   filter->blockLength = capacity / 3;
   capacity = capacity / 3 * 3;
@@ -136,24 +134,24 @@ bool xor16_allocate(size_t size, xor16_t *filter) {
 }
 
 // report memory usage
-size_t xor8_size_in_bytes(const xor8_t *filter) {
+static inline size_t xor8_size_in_bytes(const xor8_t *filter) {
   return 3 * filter->blockLength * sizeof(uint8_t) + sizeof(xor8_t);
 }
 
 // report memory usage
-size_t xor16_size_in_bytes(const xor16_t *filter) {
+static inline size_t xor16_size_in_bytes(const xor16_t *filter) {
   return 3 * filter->blockLength * sizeof(uint16_t) + sizeof(xor16_t);
 }
 
 // release memory
-void xor8_free(xor8_t *filter) {
+static inline void xor8_free(xor8_t *filter) {
   free(filter->fingerprints);
   filter->fingerprints = NULL;
   filter->blockLength = 0;
 }
 
 // release memory
-void xor16_free(xor16_t *filter) {
+static inline void xor16_free(xor16_t *filter) {
   free(filter->fingerprints);
   filter->fingerprints = NULL;
   filter->blockLength = 0;
@@ -197,8 +195,8 @@ struct xor_h0h1h2_s {
 
 typedef struct xor_h0h1h2_s xor_h0h1h2_t;
 
-
-static inline xor_h0h1h2_t xor8_get_just_h0_h1_h2(uint64_t hash, const xor8_t *filter) {
+static inline xor_h0h1h2_t xor8_get_just_h0_h1_h2(uint64_t hash,
+                                                  const xor8_t *filter) {
   xor_h0h1h2_t answer;
   uint32_t r0 = (uint32_t)hash;
   uint32_t r1 = (uint32_t)xor_rotl64(hash, 21);
@@ -209,7 +207,30 @@ static inline xor_h0h1h2_t xor8_get_just_h0_h1_h2(uint64_t hash, const xor8_t *f
   answer.h2 = xor_reduce(r2, filter->blockLength) + 2 * filter->blockLength;
   return answer;
 }
-
+static inline uint32_t xor8_get_h0(uint64_t hash, const xor8_t *filter) {
+  uint32_t r0 = (uint32_t)hash;
+  return xor_reduce(r0, filter->blockLength);
+}
+static inline uint32_t xor8_get_h1(uint64_t hash, const xor8_t *filter) {
+  uint32_t r1 = (uint32_t)xor_rotl64(hash, 21);
+  return xor_reduce(r1, filter->blockLength) + filter->blockLength;
+}
+static inline uint32_t xor8_get_h2(uint64_t hash, const xor8_t *filter) {
+  uint32_t r2 = (uint32_t)xor_rotl64(hash, 42);
+  return xor_reduce(r2, filter->blockLength) + 2 * filter->blockLength;
+}
+static inline uint32_t xor16_get_h0(uint64_t hash, const xor16_t *filter) {
+  uint32_t r0 = (uint32_t)hash;
+  return xor_reduce(r0, filter->blockLength);
+}
+static inline uint32_t xor16_get_h1(uint64_t hash, const xor16_t *filter) {
+  uint32_t r1 = (uint32_t)xor_rotl64(hash, 21);
+  return xor_reduce(r1, filter->blockLength) + filter->blockLength;
+}
+static inline uint32_t xor16_get_h2(uint64_t hash, const xor16_t *filter) {
+  uint32_t r2 = (uint32_t)xor_rotl64(hash, 42);
+  return xor_reduce(r2, filter->blockLength) + 2 * filter->blockLength;
+}
 static inline xor_hashes_t xor16_get_h0_h1_h2(uint64_t k,
                                               const xor16_t *filter) {
   uint64_t hash = xor_mix_split(k, filter->seed);
@@ -225,9 +246,8 @@ static inline xor_hashes_t xor16_get_h0_h1_h2(uint64_t k,
   return answer;
 }
 
-
 static inline xor_h0h1h2_t xor16_get_just_h0_h1_h2(uint64_t hash,
-                                              const xor16_t *filter) {
+                                                   const xor16_t *filter) {
   xor_h0h1h2_t answer;
   uint32_t r0 = (uint32_t)hash;
   uint32_t r1 = (uint32_t)xor_rotl64(hash, 21);
@@ -242,7 +262,6 @@ static inline xor_h0h1h2_t xor16_get_just_h0_h1_h2(uint64_t hash,
 struct xor_keyindex_s {
   uint64_t hash;
   uint64_t index;
-  xor_h0h1h2_t hashes;
 };
 
 typedef struct xor_keyindex_s xor_keyindex_t;
@@ -259,7 +278,11 @@ bool xor8_populate(const uint64_t *keys, size_t size, xor8_t *filter) {
   size_t arrayLength = filter->blockLength * 3; // size of the backing array
   xor_xorset_t *sets =
       (xor_xorset_t *)malloc(arrayLength * sizeof(xor_xorset_t));
-  size_t *Q = (size_t *)malloc(arrayLength * sizeof(size_t));
+  xor_keyindex_t *Q =
+      (xor_keyindex_t *)malloc(arrayLength * sizeof(xor_keyindex_t));
+  xor_keyindex_t *Q0 = Q;
+  xor_keyindex_t *Q1 = Q + filter->blockLength;
+  xor_keyindex_t *Q2 = Q + 2 * filter->blockLength;
   xor_keyindex_t *stack =
       (xor_keyindex_t *)malloc(size * sizeof(xor_keyindex_t));
 
@@ -283,37 +306,104 @@ bool xor8_populate(const uint64_t *keys, size_t size, xor8_t *filter) {
       sets[hs.h2].count++;
     }
     // scan for values with a count of one
-    size_t Qsize = 0;
-    for (size_t i = 0; i < arrayLength; i++) {
-      if (sets[i].count == 1)
-        Q[Qsize++] = i;
+    size_t Q0size = 0, Q1size = 0, Q2size = 0;
+    for (size_t i = 0; i < filter->blockLength; i++) {
+      if (sets[i].count == 1) {
+        Q0[Q0size].index = i;
+        Q0[Q0size].hash = sets[i].xormask;
+        Q0size++;
+      }
+    }
+    for (size_t i = filter->blockLength; i < 2 * filter->blockLength; i++) {
+      if (sets[i].count == 1) {
+        Q1[Q1size].index = i;
+        Q1[Q1size].hash = sets[i].xormask;
+        Q1size++;
+      }
+    }
+    for (size_t i = 2 * filter->blockLength; i < 3 * filter->blockLength; i++) {
+      if (sets[i].count == 1) {
+        Q2[Q2size].index = i;
+        Q2[Q2size].hash = sets[i].xormask;
+        Q2size++;
+      }
     }
     size_t stack_size = 0;
-    while (Qsize > 0) {
-      size_t index = Q[--Qsize];
-      if (sets[index].count == 0)
-        continue;
-      // assert(sets[index].count == 1);
-      uint64_t hash = sets[index].xormask;
-      stack[stack_size].hash = hash;
-      stack[stack_size].index = index;
-      xor_h0h1h2_t hashes = xor8_get_just_h0_h1_h2(hash, filter);
-      stack[stack_size].hashes = hashes;
-      stack_size++;
-      sets[hashes.h0].xormask ^= hash;
-      sets[hashes.h0].count--;
-      sets[hashes.h1].xormask ^= hash;
-      sets[hashes.h1].count--;
-      sets[hashes.h2].xormask ^= hash;
-      sets[hashes.h2].count--;
-      if (sets[hashes.h0].count == 1) {
-        Q[Qsize++] = hashes.h0;
+    while (Q0size + Q1size + Q2size > 0) {
+      while (Q0size > 0) {
+        xor_keyindex_t keyindex = Q0[--Q0size];
+        size_t index = keyindex.index;
+        if (sets[index].count == 0)
+          continue; // not actually possible after the initial scan.
+        uint64_t hash = keyindex.hash;
+        uint32_t h1 = xor8_get_h1(hash, filter);
+        uint32_t h2 = xor8_get_h2(hash, filter);
+        stack[stack_size] = keyindex;
+        stack_size++;
+        sets[h1].xormask ^= hash;
+        sets[h1].count--;
+        if (sets[h1].count == 1) {
+          Q1[Q1size].index = h1;
+          Q1[Q1size].hash = sets[h1].xormask;
+          Q1size++;
+        }
+        sets[h2].xormask ^= hash;
+        sets[h2].count--;
+        if (sets[h2].count == 1) {
+          Q2[Q2size].index = h2;
+          Q2[Q2size].hash = sets[h2].xormask;
+          Q2size++;
+        }
       }
-      if (sets[hashes.h1].count == 1) {
-        Q[Qsize++] = hashes.h1;
+      while (Q1size > 0) {
+        xor_keyindex_t keyindex = Q1[--Q1size];
+        size_t index = keyindex.index;
+        if (sets[index].count == 0)
+          continue;
+        uint64_t hash = keyindex.hash;
+        uint32_t h0 = xor8_get_h0(hash, filter);
+        uint32_t h2 = xor8_get_h2(hash, filter);
+        stack[stack_size] = keyindex;
+        stack_size++;
+        sets[h0].xormask ^= hash;
+        sets[h0].count--;
+        if (sets[h0].count == 1) {
+          Q0[Q0size].index = h0;
+          Q0[Q0size].hash = sets[h0].xormask;
+          Q0size++;
+        }
+        sets[h2].xormask ^= hash;
+        sets[h2].count--;
+        if (sets[h2].count == 1) {
+          Q2[Q2size].index = h2;
+          Q2[Q2size].hash = sets[h2].xormask;
+          Q2size++;
+        }
       }
-      if (sets[hashes.h2].count == 1) {
-        Q[Qsize++] = hashes.h2;
+      while (Q2size > 0) {
+        xor_keyindex_t keyindex = Q2[--Q2size];
+        size_t index = keyindex.index;
+        if (sets[index].count == 0)
+          continue;
+        uint64_t hash = keyindex.hash;
+        uint32_t h0 = xor8_get_h0(hash, filter);
+        uint32_t h1 = xor8_get_h1(hash, filter);
+        stack[stack_size] = keyindex;
+        stack_size++;
+        sets[h0].xormask ^= hash;
+        sets[h0].count--;
+        if (sets[h0].count == 1) {
+          Q0[Q0size].index = h0;
+          Q0[Q0size].hash = sets[h0].xormask;
+          Q0size++;
+        }
+        sets[h1].xormask ^= hash;
+        sets[h1].count--;
+        if (sets[h1].count == 1) {
+          Q1[Q1size].index = h1;
+          Q1[Q1size].hash = sets[h1].xormask;
+          Q1size++;
+        }
       }
     }
     if (stack_size == size) {
@@ -326,11 +416,11 @@ bool xor8_populate(const uint64_t *keys, size_t size, xor8_t *filter) {
   size_t stack_size = size;
   while (stack_size > 0) {
     xor_keyindex_t ki = stack[--stack_size];
+    xor_h0h1h2_t hashes = xor8_get_just_h0_h1_h2(ki.hash, filter);
     filter->fingerprints[ki.index] = 0;
     filter->fingerprints[ki.index] =
-        xor_fingerprint(ki.hash) ^ filter->fingerprints[ki.hashes.h0] ^
-        filter->fingerprints[ki.hashes.h1] ^ filter->fingerprints[ki.hashes.h2];
-    // assert(xor8_contain(ki.key, filter));
+        xor_fingerprint(ki.hash) ^ filter->fingerprints[hashes.h0] ^
+        filter->fingerprints[hashes.h1] ^ filter->fingerprints[hashes.h2];
   }
   free(sets);
   free(Q);
@@ -350,7 +440,11 @@ bool xor16_populate(const uint64_t *keys, size_t size, xor16_t *filter) {
   size_t arrayLength = filter->blockLength * 3; // size of the backing array
   xor_xorset_t *sets =
       (xor_xorset_t *)malloc(arrayLength * sizeof(xor_xorset_t));
-  size_t *Q = (size_t *)malloc(arrayLength * sizeof(size_t));
+  xor_keyindex_t *Q =
+      (xor_keyindex_t *)malloc(arrayLength * sizeof(xor_keyindex_t));
+  xor_keyindex_t *Q0 = Q;
+  xor_keyindex_t *Q1 = Q + filter->blockLength;
+  xor_keyindex_t *Q2 = Q + 2 * filter->blockLength;
   xor_keyindex_t *stack =
       (xor_keyindex_t *)malloc(size * sizeof(xor_keyindex_t));
 
@@ -374,37 +468,104 @@ bool xor16_populate(const uint64_t *keys, size_t size, xor16_t *filter) {
       sets[hs.h2].count++;
     }
     // scan for values with a count of one
-    size_t Qsize = 0;
-    for (size_t i = 0; i < arrayLength; i++) {
-      if (sets[i].count == 1)
-        Q[Qsize++] = i;
+    size_t Q0size = 0, Q1size = 0, Q2size = 0;
+    for (size_t i = 0; i < filter->blockLength; i++) {
+      if (sets[i].count == 1) {
+        Q0[Q0size].index = i;
+        Q0[Q0size].hash = sets[i].xormask;
+        Q0size++;
+      }
+    }
+    for (size_t i = filter->blockLength; i < 2 * filter->blockLength; i++) {
+      if (sets[i].count == 1) {
+        Q1[Q1size].index = i;
+        Q1[Q1size].hash = sets[i].xormask;
+        Q1size++;
+      }
+    }
+    for (size_t i = 2 * filter->blockLength; i < 3 * filter->blockLength; i++) {
+      if (sets[i].count == 1) {
+        Q2[Q2size].index = i;
+        Q2[Q2size].hash = sets[i].xormask;
+        Q2size++;
+      }
     }
     size_t stack_size = 0;
-    while (Qsize > 0) {
-      size_t index = Q[--Qsize];
-      if (sets[index].count == 0)
-        continue;
-      // assert(sets[index].count == 1);
-      uint64_t hash = sets[index].xormask;
-      stack[stack_size].hash = hash;
-      stack[stack_size].index = index;
-      xor_h0h1h2_t hashes = xor16_get_just_h0_h1_h2(hash, filter);
-      stack[stack_size].hashes = hashes;
-      stack_size++;
-      sets[hashes.h0].xormask ^= hash;
-      sets[hashes.h0].count--;
-      sets[hashes.h1].xormask ^= hash;
-      sets[hashes.h1].count--;
-      sets[hashes.h2].xormask ^= hash;
-      sets[hashes.h2].count--;
-      if (sets[hashes.h0].count == 1) {
-        Q[Qsize++] = hashes.h0;
+    while (Q0size + Q1size + Q2size > 0) {
+      while (Q0size > 0) {
+        xor_keyindex_t keyindex = Q0[--Q0size];
+        size_t index = keyindex.index;
+        if (sets[index].count == 0)
+          continue; // not actually possible after the initial scan.
+        uint64_t hash = keyindex.hash;
+        uint32_t h1 = xor16_get_h1(hash, filter);
+        uint32_t h2 = xor16_get_h2(hash, filter);
+        stack[stack_size] = keyindex;
+        stack_size++;
+        sets[h1].xormask ^= hash;
+        sets[h1].count--;
+        if (sets[h1].count == 1) {
+          Q1[Q1size].index = h1;
+          Q1[Q1size].hash = sets[h1].xormask;
+          Q1size++;
+        }
+        sets[h2].xormask ^= hash;
+        sets[h2].count--;
+        if (sets[h2].count == 1) {
+          Q2[Q2size].index = h2;
+          Q2[Q2size].hash = sets[h2].xormask;
+          Q2size++;
+        }
       }
-      if (sets[hashes.h1].count == 1) {
-        Q[Qsize++] = hashes.h1;
+      while (Q1size > 0) {
+        xor_keyindex_t keyindex = Q1[--Q1size];
+        size_t index = keyindex.index;
+        if (sets[index].count == 0)
+          continue;
+        uint64_t hash = keyindex.hash;
+        uint32_t h0 = xor16_get_h0(hash, filter);
+        uint32_t h2 = xor16_get_h2(hash, filter);
+        stack[stack_size] = keyindex;
+        stack_size++;
+        sets[h0].xormask ^= hash;
+        sets[h0].count--;
+        if (sets[h0].count == 1) {
+          Q0[Q0size].index = h0;
+          Q0[Q0size].hash = sets[h0].xormask;
+          Q0size++;
+        }
+        sets[h2].xormask ^= hash;
+        sets[h2].count--;
+        if (sets[h2].count == 1) {
+          Q2[Q2size].index = h2;
+          Q2[Q2size].hash = sets[h2].xormask;
+          Q2size++;
+        }
       }
-      if (sets[hashes.h2].count == 1) {
-        Q[Qsize++] = hashes.h2;
+      while (Q2size > 0) {
+        xor_keyindex_t keyindex = Q2[--Q2size];
+        size_t index = keyindex.index;
+        if (sets[index].count == 0)
+          continue;
+        uint64_t hash = keyindex.hash;
+        uint32_t h0 = xor16_get_h0(hash, filter);
+        uint32_t h1 = xor16_get_h1(hash, filter);
+        stack[stack_size] = keyindex;
+        stack_size++;
+        sets[h0].xormask ^= hash;
+        sets[h0].count--;
+        if (sets[h0].count == 1) {
+          Q0[Q0size].index = h0;
+          Q0[Q0size].hash = sets[h0].xormask;
+          Q0size++;
+        }
+        sets[h1].xormask ^= hash;
+        sets[h1].count--;
+        if (sets[h1].count == 1) {
+          Q1[Q1size].index = h1;
+          Q1[Q1size].hash = sets[h1].xormask;
+          Q1size++;
+        }
       }
     }
     if (stack_size == size) {
@@ -417,15 +578,16 @@ bool xor16_populate(const uint64_t *keys, size_t size, xor16_t *filter) {
   size_t stack_size = size;
   while (stack_size > 0) {
     xor_keyindex_t ki = stack[--stack_size];
+    xor_h0h1h2_t hashes = xor16_get_just_h0_h1_h2(ki.hash, filter);
     filter->fingerprints[ki.index] = 0;
     filter->fingerprints[ki.index] =
-        xor_fingerprint(ki.hash) ^ filter->fingerprints[ki.hashes.h0] ^
-        filter->fingerprints[ki.hashes.h1] ^ filter->fingerprints[ki.hashes.h2];
-    // assert(xor16_contain(ki.key, filter));
+        xor_fingerprint(ki.hash) ^ filter->fingerprints[hashes.h0] ^
+        filter->fingerprints[hashes.h1] ^ filter->fingerprints[hashes.h2];
   }
   free(sets);
   free(Q);
   free(stack);
   return true;
 }
+
 #endif
