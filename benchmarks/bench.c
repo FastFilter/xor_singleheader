@@ -6,7 +6,7 @@ bool testxor8() {
   printf("testing xor8\n");
 
   xor8_t filter;
-  size_t size = 10 * 1000 * 1000;
+  size_t size = 50 * 1000 * 1000;
   xor8_allocate(size, &filter);
   // we need some set of values
   uint64_t *big_set = (uint64_t *)malloc(sizeof(uint64_t) * size);
@@ -26,10 +26,11 @@ bool testxor8() {
 }
 
 bool testbufferedxor8() {
-  printf("testing xor8\n");
+  printf("testing buffered xor8\n");
 
   xor8_t filter;
-  size_t size =100 ;//* 1000 * 1000;
+  size_t size = 50 * 1000 * 1000 ;//* 1000 * 1000;
+  printf("size = %zu \n",size);
   xor8_allocate(size, &filter);
   // we need some set of values
   uint64_t *big_set = (uint64_t *)malloc(sizeof(uint64_t) * size);
@@ -51,5 +52,7 @@ bool testbufferedxor8() {
 
 int main() {
   testbufferedxor8();
-  //testxor8();
+  testxor8();
+
+
 }

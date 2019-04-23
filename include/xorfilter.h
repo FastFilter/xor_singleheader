@@ -1,6 +1,6 @@
 #ifndef XORFILTER_H
 #define XORFILTER_H
-
+#define NDEBUG
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -281,12 +281,14 @@ typedef struct xor_setbuffer_s xor_setbuffer_t;
 
 static inline bool init_buffer(xor_setbuffer_t * buffer, size_t size) {
   buffer->originalsize = size;
-  buffer->slotsize = 131072;
-  buffer->insignificantbits = 17;
+  buffer->insignificantbits = 18;
+  buffer->slotsize = UINT32_C(1) << buffer->insignificantbits;
   buffer->slotcount = (size + buffer->slotsize  - 1) / buffer->slotsize ;
   buffer->buffer = (xor_keyindex_t *)malloc(
   buffer->slotcount * buffer->slotsize * sizeof(xor_keyindex_t));
-  printf("allocating %zu \n", buffer->slotcount * buffer->slotsize);
+  printf("size in bytes of each slot %zu \n", buffer->slotsize * sizeof(xor_keyindex_t) );
+  printf("slot count = %zu \n",buffer->slotcount );
+  //  printf("allocating %zu \n", buffer->slotcount * buffer->slotsize);
   buffer->counts = (uint32_t *)malloc(buffer->slotcount * sizeof(uint32_t));
   if((buffer->counts == NULL) || (buffer->buffer == NULL)) {
     free(buffer->counts);
@@ -326,6 +328,9 @@ static inline void buffered_increment_counter(uint32_t index, uint64_t hash, xor
 
 
 static inline void buffered_decrement_counter(uint32_t index, uint64_t hash, xor_setbuffer_t * buffer, xor_xorset_t *sets, xor_keyindex_t *Q, size_t * Qsize) {
+ assert(sets[index].count > 0);
+ /*
+ 
  
  sets[index].xormask ^= hash;
  sets[index].count --;
@@ -335,35 +340,38 @@ static inline void buffered_decrement_counter(uint32_t index, uint64_t hash, xor
             ki.index = index;
                Q[*Qsize] = ki;
             *Qsize += 1;
- }
- /* printf("index = %zu buffer->originalsize = %zu\n",index,buffer->originalsize);
+ }*/
   assert(index < buffer->originalsize);
   uint32_t slot = index >> buffer->insignificantbits;
-  //printf("slot = %zu \n", slot);
   assert(slot <  buffer->slotcount);
   size_t addr = buffer->counts[slot] + (slot << buffer->insignificantbits); 
   assert(buffer->counts[slot] <  buffer->slotsize);
-  //printf("count = %zu \n", buffer->counts[slot]);
-  //printf("addr = %zu \n", addr);
   buffer->buffer[addr].index = index;
   buffer->buffer[addr].hash = hash;
   buffer->counts[slot]++;
-  if(true) {
-//  if(buffer->counts[slot]  == buffer->slotsize) {
+  //if(true) {
+  if(buffer->counts[slot]  == buffer->slotsize) {
+    printf("need to flush early\n");
     // must empty the buffer
+    assert(buffer->counts[slot] == 1);
         for (size_t i = 0; i < buffer->counts[slot]; i++) {
           xor_keyindex_t ki =  buffer->buffer[i + (slot << buffer->insignificantbits)];
+assert(ki.index == index);
+assert(ki.hash == hash);
+assert( sets[index].count == sets[ki.index].count);
           sets[ki.index].xormask ^= ki.hash;
+assert(sets[ki.index].count > 0);
           sets[ki.index].count--;
           if(sets[ki.index].count == 1) {
-                        printf("****got a match, I am going to increment my counter Q[%zu] = %zu \n", *Qsize, ki.index);
+ki.hash = sets[ki.index].xormask ;
+assert(ki.hash == sets[index].xormask);
 
             Q[*Qsize] = ki;
             *Qsize += 1;
           }
         }
         buffer->counts[slot] = 0;
-  }*/
+  }
 }
 
 
@@ -380,23 +388,19 @@ static inline void flush_increment_buffer(xor_setbuffer_t * buffer, xor_xorset_t
 
 
 static inline void flush_decrement_buffer(xor_setbuffer_t * buffer, xor_xorset_t *sets, xor_keyindex_t *Q, size_t * Qsize) {
-  printf("flushing buffer Qsize = %zu \n", *Qsize);
   for(uint32_t slot = 0; slot < buffer->slotcount; slot++) {
-    printf("slot %zu has %zu \n", slot, buffer->counts[slot]);
+       uint32_t base = (slot << buffer->insignificantbits);
         for (size_t i = 0; i < buffer->counts[slot]; i++) {
-                        printf("accessing key at  %zu, Q=%zu \n", i + (slot << buffer->insignificantbits), *Qsize);
 
-          xor_keyindex_t ki =  buffer->buffer[i + (slot << buffer->insignificantbits)];
-                        printf(" Q=%zu \n",  *Qsize);
+          xor_keyindex_t ki =  buffer->buffer[i + base];
 
           sets[ki.index].xormask ^= ki.hash;
-                                  printf(" Q=%zu \n",  *Qsize);
 
+assert(sets[ki.index].count > 0);
           sets[ki.index].count--;
-                        printf(" Q=%zu \n",  *Qsize);
 
           if(sets[ki.index].count == 1) {
-            printf("**got a match, I am going to increment my counter %zu \n", *Qsize);
+            ki.hash = sets[ki.index].xormask ;
             Q[*Qsize] = ki;
             *Qsize += 1;
           }
@@ -467,15 +471,6 @@ bool xor8_buffered_populate(const uint64_t *keys, size_t size, xor8_t *filter) {
     flush_increment_buffer(&buffer1, sets1);
     flush_increment_buffer(&buffer2, sets2);
 
-    size_t totals[3];
-    memset(totals, 0, sizeof(size_t) * 3);
-    for (size_t i = 0; i < filter->blockLength; i++) {
-      totals[0] +=  sets[i].count;
-      totals[1] +=  sets[i+ blockLength].count;
-      totals[2] +=  sets[i+ 2*blockLength].count;
-printf("%zu : %zu %zu %zu \n",i, sets[i].count, sets[i + blockLength].count, sets[i + 2 * blockLength].count );
-}
-printf("======\n %zu %zu %zu \n", totals[0],totals[1],totals[2]);
     // scan for values with a count of one
     size_t Q0size = 0, Q1size = 0, Q2size = 0;
     for (size_t i = 0; i < filter->blockLength; i++) {
@@ -485,6 +480,9 @@ printf("======\n %zu %zu %zu \n", totals[0],totals[1],totals[2]);
         Q0size++;
       }
     }
+    
+
+
     for (size_t i = 0; i < filter->blockLength; i++) {
       if (sets1[i].count == 1) {
         Q1[Q1size].index = i;
@@ -501,148 +499,94 @@ printf("======\n %zu %zu %zu \n", totals[0],totals[1],totals[2]);
     }
 
     size_t stack_size = 0;
-    printf("setting stack to zero\n");
     while (Q0size + Q1size + Q2size > 0) {
-    //  printf("Q0size %zu Q1size %zu Q2size %zu, size =%zu \n", Q0size, Q1size, Q2size, size);
+      //printf("main %zu %zu %zu \n", Q0size, Q1size, Q2size);
       while (Q0size > 0) {
         xor_keyindex_t keyindex = Q0[--Q0size];
         size_t index = keyindex.index;
         if (sets0[index].count == 0)
           continue; // not actually possible after the initial scan.
         assert(sets0[index].count == 1);
-        printf("found match at %zu \n", index);
+     //   printf("index = %zu \n", index);
         sets0[index].count = 0;
         uint64_t hash = keyindex.hash;
         uint32_t h1 = xor8_get_h1(hash, filter);
         uint32_t h2 = xor8_get_h2(hash, filter);
-             printf("q0 stack[%zu] --- %zu, size =%zu \n", stack_size, keyindex.index, size);
-
+        assert(sets[h1].count>0);
+        assert(sets[h2].count>0);    
         stack[stack_size] = keyindex;
         stack_size++;
         buffered_decrement_counter(h1 - blockLength,hash,&buffer1,sets1,Q1,&Q1size);
         buffered_decrement_counter(h2 - 2 * blockLength,hash,&buffer2,sets2,Q2,&Q2size);
       }
-//printf("Q1size = %zu blockLength = %zu  \n", Q1size, blockLength);
-    memset(totals, 0, sizeof(size_t) * 3);
-    for (size_t i = 0; i < filter->blockLength; i++) {
-      totals[0] +=  sets[i].count;
-      totals[1] +=  sets[i+ blockLength].count;
-      totals[2] +=  sets[i+ 2*blockLength].count;
-//printf("%zu : %zu %zu %zu \n",i, sets[i].count, sets[i + blockLength].count, sets[i + 2 * blockLength].count );
-}
-printf("======\n %zu %zu %zu \n", totals[0],totals[1],totals[2]);
 
 
       //if(Q0size + Q1size + Q2size == 0) {
-        flush_decrement_buffer(&buffer1,sets + blockLength,Q1,&Q1size);
+        flush_decrement_buffer(&buffer1,sets1,Q1,&Q1size);
       //}
 
   //  abort();
 
 
-    memset(totals, 0, sizeof(size_t) * 3);
-    for (size_t i = 0; i < filter->blockLength; i++) {
-      totals[0] +=  sets[i].count;
-      totals[1] +=  sets[i+ blockLength].count;
-      totals[2] +=  sets[i+ 2*blockLength].count;
-//printf("%zu : %zu %zu %zu \n",i, sets[i].count, sets[i + blockLength].count, sets[i + 2 * blockLength].count );
-}
-printf("======\n %zu %zu %zu \n", totals[0],totals[1],totals[2]);
-for(size_t i = 0; i < Q2size; i++) {
-  printf("--Q2 %zu ", Q2[i].index);
-}
-printf("\n");
       while (Q1size > 0) {
         xor_keyindex_t keyindex = Q1[--Q1size];
         size_t index = keyindex.index;
         if (sets1[index].count == 0)
           continue;
 assert(sets1[index].count == 1);
-          printf("found match at %zu \n", index);
-        sets1[index].count = 0;
+          sets1[index].count = 0;
         uint64_t hash = keyindex.hash;
         uint32_t h0 = xor8_get_h0(hash, filter);
         uint32_t h2 = xor8_get_h2(hash, filter);
-        printf("q1 stack[%zu] --- %zu, size =%zu \n", stack_size, keyindex.index, size);
+        //if(sets[h0].count == 0) printf("zero count at h0 = %zu \n", h0);
+                assert(sets[h0].count>0);
+        assert(sets[h2].count>0); 
         keyindex.index += blockLength;
         stack[stack_size] = keyindex;
         stack_size++;
         buffered_decrement_counter(h0,hash,&buffer0,sets0,Q0,&Q0size);
         buffered_decrement_counter(h2 - 2 * blockLength,hash,&buffer2,sets2,Q2,&Q2size);
 
-            memset(totals, 0, sizeof(size_t) * 3);
-    for (size_t i = 0; i < filter->blockLength; i++) {
-      totals[0] +=  sets[i].count;
-      totals[1] +=  sets[i+ blockLength].count;
-      totals[2] +=  sets[i+ 2*blockLength].count;
-//printf("%zu : %zu %zu %zu \n",i, sets[i].count, sets[i + blockLength].count, sets[i + 2 * blockLength].count );
-}
-printf("======\n %zu %zu %zu \n", totals[0],totals[1],totals[2]);
       }
-//      if(Q0size + Q1size + Q2size == 0) {
-        flush_decrement_buffer(&buffer2,sets + 2 * blockLength,Q2,&Q2size);
-  //    }
+      //if(Q0size + Q1size + Q2size == 0) {
+        flush_decrement_buffer(&buffer2,sets2,Q2,&Q2size);
+      //}
 
 
-    memset(totals, 0, sizeof(size_t) * 3);
-    for (size_t i = 0; i < filter->blockLength; i++) {
-      totals[0] +=  sets[i].count;
-      totals[1] +=  sets[i+ blockLength].count;
-      totals[2] +=  sets[i+ 2*blockLength].count;
-//printf("%zu : %zu %zu %zu \n",i, sets[i].count, sets[i + blockLength].count, sets[i + 2 * blockLength].count );
-}
-//printf("======\n %zu %zu %zu \n", totals[0],totals[1],totals[2]);
-for(size_t i = 0; i < Q2size; i++) {
-  printf("Q2 %zu ", Q2[i].index);
-}
-printf("\n");
-      while (Q2size > 0) {
+        while (Q2size > 0) {
         xor_keyindex_t keyindex = Q2[--Q2size];
         size_t index = keyindex.index;
         if (sets2[index].count == 0)
           continue;
           assert(sets2[index].count == 1);
-                    printf("found match at %zu \n", index);
-
+                    
         sets2[index].count = 0;
         uint64_t hash = keyindex.hash;
         uint32_t h0 = xor8_get_h0(hash, filter);
         uint32_t h1 = xor8_get_h1(hash, filter);
-        printf("q2 stack[%zu] --- %zu \n", stack_size, keyindex.index);
+                assert(sets[h0].count>0);
+        assert(sets[h1].count>0); 
         keyindex.index += 2*blockLength;
 
         stack[stack_size] = keyindex;
         stack_size++;
         buffered_decrement_counter(h0,hash,&buffer0,sets0,Q0,&Q0size);
         buffered_decrement_counter(h1 - blockLength,hash,&buffer1,sets1,Q1,&Q1size);
-            memset(totals, 0, sizeof(size_t) * 3);
-    for (size_t i = 0; i < filter->blockLength; i++) {
-      totals[0] +=  sets[i].count;
-      totals[1] +=  sets[i+ blockLength].count;
-      totals[2] +=  sets[i+ 2*blockLength].count;
-//printf("%zu : %zu %zu %zu \n",i, sets[i].count, sets[i + blockLength].count, sets[i + 2 * blockLength].count );
-}
-printf("======\n %zu %zu %zu \n", totals[0],totals[1],totals[2]);
       }
-    //  if(Q0size + Q1size + Q2size == 0) {
-        flush_decrement_buffer(&buffer0,sets0,Q0,&Q0size);
+     // if(Q0size + Q1size + Q2size == 0) {
+       // printf("forcing a flush \n");
+      flush_decrement_buffer(&buffer0,sets0,Q0,&Q0size);
+         //     flush_decrement_buffer(&buffer1,sets1,Q1,&Q1size);
+           //   flush_decrement_buffer(&buffer2,sets2,Q2,&Q2size);
       //}
 
 
-    memset(totals, 0, sizeof(size_t) * 3);
-    for (size_t i = 0; i < filter->blockLength; i++) {
-      totals[0] +=  sets[i].count;
-      totals[1] +=  sets[i+ blockLength].count;
-      totals[2] +=  sets[i+ 2*blockLength].count;
-//printf("%zu : %zu %zu %zu \n",i, sets[i].count, sets[i + blockLength].count, sets[i + 2 * blockLength].count );
-}
-printf("======\n %zu %zu %zu \n", totals[0],totals[1],totals[2]);
-    }
+     }
     if (stack_size == size) {
       // success
       break;
     }
-    abort();
+    printf("new random\n");
     // use a new random numbers
     filter->seed = xor_rng_splitmix64(&rng_counter);
   }
@@ -810,6 +754,8 @@ bool xor8_populate(const uint64_t *keys, size_t size, xor8_t *filter) {
       // success
       break;
     }
+//        printf("new random\n");
+
     // use a new random numbers
     filter->seed = xor_rng_splitmix64(&rng_counter);
   }
