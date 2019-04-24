@@ -1,12 +1,14 @@
 #ifndef XORFILTER_H
 #define XORFILTER_H
-
+#define NDEBUG
+#include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 /**
  * We assume that you have a large set of 64-bit integers
  * and you want a data structure to do membership tests using
@@ -266,6 +268,380 @@ struct xor_keyindex_s {
 
 typedef struct xor_keyindex_s xor_keyindex_t;
 
+struct xor_setbuffer_s {
+  xor_keyindex_t *buffer;
+  uint32_t *counts;
+  int insignificantbits;
+  uint32_t slotsize; // should be 1<< insignificantbits
+  uint32_t slotcount;
+  size_t originalsize;
+};
+
+typedef struct xor_setbuffer_s xor_setbuffer_t;
+
+static inline bool xor_init_buffer(xor_setbuffer_t *buffer, size_t size) {
+  buffer->originalsize = size;
+  buffer->insignificantbits = 18;
+  buffer->slotsize = UINT32_C(1) << buffer->insignificantbits;
+  buffer->slotcount = (size + buffer->slotsize - 1) / buffer->slotsize;
+  buffer->buffer = (xor_keyindex_t *)malloc(
+      buffer->slotcount * buffer->slotsize * sizeof(xor_keyindex_t));
+  buffer->counts = (uint32_t *)malloc(buffer->slotcount * sizeof(uint32_t));
+  if ((buffer->counts == NULL) || (buffer->buffer == NULL)) {
+    free(buffer->counts);
+    free(buffer->buffer);
+    return false;
+  }
+  memset(buffer->counts, 0, buffer->slotcount * sizeof(uint32_t));
+  return true;
+}
+
+static inline void xor_free_buffer(xor_setbuffer_t *buffer) {
+  free(buffer->counts);
+  free(buffer->buffer);
+  buffer->counts = NULL;
+  buffer->buffer = NULL;
+}
+
+static inline void xor_buffered_increment_counter(uint32_t index, uint64_t hash,
+                                                  xor_setbuffer_t *buffer,
+                                                  xor_xorset_t *sets) {
+  assert(index < buffer->originalsize);
+  uint32_t slot = index >> buffer->insignificantbits;
+  assert(buffer->counts[slot] < buffer->slotsize);
+  size_t addr = buffer->counts[slot] + (slot << buffer->insignificantbits);
+  buffer->buffer[addr].index = index;
+  buffer->buffer[addr].hash = hash;
+  buffer->counts[slot]++;
+  if (buffer->counts[slot] == buffer->slotsize) {
+    // must empty the buffer
+    for (size_t i = 0; i < buffer->slotsize; i++) {
+      xor_keyindex_t ki =
+          buffer->buffer[i + (slot << buffer->insignificantbits)];
+      sets[ki.index].xormask ^= ki.hash;
+      sets[ki.index].count++;
+    }
+    buffer->counts[slot] = 0;
+  }
+}
+
+static inline void xor_make_buffer_current(xor_setbuffer_t *buffer,
+                                           xor_xorset_t *sets, uint32_t index,
+                                           xor_keyindex_t *Q, size_t *Qsize) {
+  uint32_t slot = index >> buffer->insignificantbits;
+  for (size_t i = 0; i < buffer->counts[slot]; i++) {
+    xor_keyindex_t ki = buffer->buffer[i + (slot << buffer->insignificantbits)];
+    sets[ki.index].xormask ^= ki.hash;
+    sets[ki.index].count--;
+    if (sets[ki.index].count == 1) {
+      ki.hash = sets[ki.index].xormask;
+      Q[*Qsize] = ki;
+      *Qsize += 1;
+    }
+  }
+  buffer->counts[slot] = 0;
+}
+
+static inline void xor_buffered_decrement_counter(uint32_t index, uint64_t hash,
+                                                  xor_setbuffer_t *buffer,
+                                                  xor_xorset_t *sets,
+                                                  xor_keyindex_t *Q,
+                                                  size_t *Qsize) {
+  assert(sets[index].count > 0);
+  assert(index < buffer->originalsize);
+  uint32_t slot = index >> buffer->insignificantbits;
+  assert(slot < buffer->slotcount);
+  size_t addr = buffer->counts[slot] + (slot << buffer->insignificantbits);
+  assert(buffer->counts[slot] < buffer->slotsize);
+  buffer->buffer[addr].index = index;
+  buffer->buffer[addr].hash = hash;
+  buffer->counts[slot]++;
+  // if(true) {
+  if (buffer->counts[slot] == buffer->slotsize) {
+    for (size_t i = 0; i < buffer->counts[slot]; i++) {
+      xor_keyindex_t ki =
+          buffer->buffer[i + (slot << buffer->insignificantbits)];
+      sets[ki.index].xormask ^= ki.hash;
+      sets[ki.index].count--;
+      if (sets[ki.index].count == 1) {
+        ki.hash = sets[ki.index].xormask;
+
+        Q[*Qsize] = ki;
+        *Qsize += 1;
+      }
+    }
+    buffer->counts[slot] = 0;
+  }
+}
+
+static inline void xor_flush_increment_buffer(xor_setbuffer_t *buffer,
+                                              xor_xorset_t *sets) {
+  for (uint32_t slot = 0; slot < buffer->slotcount; slot++) {
+    for (size_t i = 0; i < buffer->counts[slot]; i++) {
+      xor_keyindex_t ki =
+          buffer->buffer[i + (slot << buffer->insignificantbits)];
+      sets[ki.index].xormask ^= ki.hash;
+      sets[ki.index].count++;
+    }
+    buffer->counts[slot] = 0;
+  }
+}
+
+static inline void xor_flush_decrement_buffer(xor_setbuffer_t *buffer,
+                                              xor_xorset_t *sets,
+                                              xor_keyindex_t *Q,
+                                              size_t *Qsize) {
+  for (uint32_t slot = 0; slot < buffer->slotcount; slot++) {
+    uint32_t base = (slot << buffer->insignificantbits);
+    for (size_t i = 0; i < buffer->counts[slot]; i++) {
+
+      xor_keyindex_t ki = buffer->buffer[i + base];
+
+      sets[ki.index].xormask ^= ki.hash;
+
+      assert(sets[ki.index].count > 0);
+      sets[ki.index].count--;
+
+      if (sets[ki.index].count == 1) {
+        ki.hash = sets[ki.index].xormask;
+        Q[*Qsize] = ki;
+        *Qsize += 1;
+      }
+    }
+    buffer->counts[slot] = 0;
+  }
+}
+
+static inline uint32_t xor_flushone_decrement_buffer(xor_setbuffer_t *buffer,
+                                                     xor_xorset_t *sets,
+                                                     xor_keyindex_t *Q,
+                                                     size_t *Qsize) {
+  uint32_t bestslot = 0;
+  uint32_t bestcount = buffer->counts[bestslot];
+  for (uint32_t slot = 1; slot < buffer->slotcount; slot++) {
+    if (buffer->counts[slot] > bestcount) {
+      bestslot = slot;
+      bestcount = buffer->counts[slot];
+    }
+  }
+  uint32_t slot = bestslot;
+  // for(uint32_t slot = 0; slot < buffer->slotcount; slot++) {
+  uint32_t base = (slot << buffer->insignificantbits);
+  for (size_t i = 0; i < buffer->counts[slot]; i++) {
+
+    xor_keyindex_t ki = buffer->buffer[i + base];
+
+    sets[ki.index].xormask ^= ki.hash;
+
+    assert(sets[ki.index].count > 0);
+    sets[ki.index].count--;
+
+    if (sets[ki.index].count == 1) {
+      ki.hash = sets[ki.index].xormask;
+      Q[*Qsize] = ki;
+      *Qsize += 1;
+    }
+  }
+  buffer->counts[slot] = 0;
+  //}
+  return bestslot;
+}
+
+//
+// construct the filter, returns true on success, false on failure.
+// most likely, a failure is due to too high a memory usage
+// size is the number of keys
+// the caller is responsable for calling xor8_allocate(size,filter) before
+//
+bool xor8_buffered_populate(const uint64_t *keys, size_t size, xor8_t *filter) {
+  uint64_t rng_counter = 1;
+  filter->seed = xor_rng_splitmix64(&rng_counter);
+  size_t arrayLength = filter->blockLength * 3; // size of the backing array
+  xor_setbuffer_t buffer0, buffer1, buffer2;
+  bool ok = true;
+  size_t blockLength = filter->blockLength;
+
+  ok = ok && xor_init_buffer(&buffer0, blockLength);
+  ok = ok && xor_init_buffer(&buffer1, blockLength);
+  ok = ok && xor_init_buffer(&buffer2, blockLength);
+  if (!ok) {
+    xor_free_buffer(&buffer0);
+    xor_free_buffer(&buffer1);
+    xor_free_buffer(&buffer2);
+    return false;
+  }
+
+  xor_xorset_t *sets =
+      (xor_xorset_t *)malloc(arrayLength * sizeof(xor_xorset_t));
+  xor_xorset_t *sets0 = sets;
+  xor_xorset_t *sets1 = sets + blockLength;
+  xor_xorset_t *sets2 = sets + 2 * blockLength;
+
+  xor_keyindex_t *Q =
+      (xor_keyindex_t *)malloc(arrayLength * sizeof(xor_keyindex_t));
+  xor_keyindex_t *Q0 = Q;
+  xor_keyindex_t *Q1 = Q + blockLength;
+  xor_keyindex_t *Q2 = Q + 2 * blockLength;
+
+  xor_keyindex_t *stack =
+      (xor_keyindex_t *)malloc(size * sizeof(xor_keyindex_t));
+
+  if ((sets == NULL) || (Q == NULL) || (stack == NULL)) {
+    free(sets);
+    free(Q);
+    free(stack);
+    return false;
+  }
+
+  while (true) {
+    memset(sets, 0, sizeof(xor_xorset_t) * arrayLength);
+    for (size_t i = 0; i < size; i++) {
+      uint64_t key = keys[i];
+      xor_hashes_t hs = xor8_get_h0_h1_h2(key, filter);
+      xor_buffered_increment_counter(hs.h0, hs.h, &buffer0, sets0);
+      xor_buffered_increment_counter(hs.h1 - blockLength, hs.h, &buffer1,
+                                     sets1);
+      xor_buffered_increment_counter(hs.h2 - 2 * blockLength, hs.h, &buffer2,
+                                     sets2);
+    }
+    xor_flush_increment_buffer(&buffer0, sets0);
+    xor_flush_increment_buffer(&buffer1, sets1);
+    xor_flush_increment_buffer(&buffer2, sets2);
+    // todo: the flush should be sync with the detection that follows
+    // scan for values with a count of one
+    size_t Q0size = 0, Q1size = 0, Q2size = 0;
+    for (size_t i = 0; i < filter->blockLength; i++) {
+      if (sets0[i].count == 1) {
+        Q0[Q0size].index = i;
+        Q0[Q0size].hash = sets0[i].xormask;
+        Q0size++;
+      }
+    }
+
+    for (size_t i = 0; i < filter->blockLength; i++) {
+      if (sets1[i].count == 1) {
+        Q1[Q1size].index = i;
+        Q1[Q1size].hash = sets1[i].xormask;
+        Q1size++;
+      }
+    }
+    for (size_t i = 0; i < filter->blockLength; i++) {
+      if (sets2[i].count == 1) {
+        Q2[Q2size].index = i;
+        Q2[Q2size].hash = sets2[i].xormask;
+        Q2size++;
+      }
+    }
+
+    size_t stack_size = 0;
+    while (Q0size + Q1size + Q2size > 0) {
+      while (Q0size > 0) {
+        xor_keyindex_t keyindex = Q0[--Q0size];
+        size_t index = keyindex.index;
+        xor_make_buffer_current(&buffer0, sets0, index, Q0, &Q0size);
+
+        if (sets0[index].count == 0)
+          continue; // not actually possible after the initial scan.
+        assert(sets0[index].count == 1);
+        sets0[index].count = 0;
+        uint64_t hash = keyindex.hash;
+        uint32_t h1 = xor8_get_h1(hash, filter);
+        uint32_t h2 = xor8_get_h2(hash, filter);
+
+        assert(sets[h1].count > 0);
+        assert(sets[h2].count > 0);
+        stack[stack_size] = keyindex;
+        stack_size++;
+        xor_buffered_decrement_counter(h1 - blockLength, hash, &buffer1, sets1,
+                                       Q1, &Q1size);
+        xor_buffered_decrement_counter(h2 - 2 * blockLength, hash, &buffer2,
+                                       sets2, Q2, &Q2size);
+      }
+      if (Q1size == 0)
+        xor_flushone_decrement_buffer(&buffer1, sets1, Q1, &Q1size);
+
+      while (Q1size > 0) {
+        xor_keyindex_t keyindex = Q1[--Q1size];
+        size_t index = keyindex.index;
+        xor_make_buffer_current(&buffer1, sets1, index, Q1, &Q1size);
+
+        if (sets1[index].count == 0)
+          continue;
+        assert(sets1[index].count == 1);
+        sets1[index].count = 0;
+        uint64_t hash = keyindex.hash;
+        uint32_t h0 = xor8_get_h0(hash, filter);
+        uint32_t h2 = xor8_get_h2(hash, filter);
+        assert(sets[h0].count > 0);
+        assert(sets[h2].count > 0);
+        keyindex.index += blockLength;
+        stack[stack_size] = keyindex;
+        stack_size++;
+        xor_buffered_decrement_counter(h0, hash, &buffer0, sets0, Q0, &Q0size);
+        xor_buffered_decrement_counter(h2 - 2 * blockLength, hash, &buffer2,
+                                       sets2, Q2, &Q2size);
+      }
+      if (Q1size == 0)
+        xor_flushone_decrement_buffer(&buffer2, sets2, Q2, &Q2size);
+      while (Q2size > 0) {
+        xor_keyindex_t keyindex = Q2[--Q2size];
+        size_t index = keyindex.index;
+        xor_make_buffer_current(&buffer2, sets2, index, Q2, &Q2size);
+        if (sets2[index].count == 0)
+          continue;
+        assert(sets2[index].count == 1);
+
+        sets2[index].count = 0;
+        uint64_t hash = keyindex.hash;
+
+        uint32_t h0 = xor8_get_h0(hash, filter);
+        uint32_t h1 = xor8_get_h1(hash, filter);
+        assert(sets[h0].count > 0);
+        assert(sets[h1].count > 0);
+        keyindex.index += 2 * blockLength;
+
+        stack[stack_size] = keyindex;
+        stack_size++;
+        xor_buffered_decrement_counter(h0, hash, &buffer0, sets0, Q0, &Q0size);
+        xor_buffered_decrement_counter(h1 - blockLength, hash, &buffer1, sets1,
+                                       Q1, &Q1size);
+      }
+      if (Q0size == 0)
+        xor_flushone_decrement_buffer(&buffer0, sets0, Q0, &Q0size);
+      if ((Q0size + Q1size + Q2size == 0) && (stack_size < size)) {
+        // this should basically never happen
+        xor_flush_decrement_buffer(&buffer0, sets0, Q0, &Q0size);
+        xor_flush_decrement_buffer(&buffer1, sets1, Q1, &Q1size);
+        xor_flush_decrement_buffer(&buffer2, sets2, Q2, &Q2size);
+      }
+    }
+    if (stack_size == size) {
+      // success
+      break;
+    }
+
+    filter->seed = xor_rng_splitmix64(&rng_counter);
+  }
+  size_t stack_size = size;
+  while (stack_size > 0) {
+    xor_keyindex_t ki = stack[--stack_size];
+    xor_h0h1h2_t hashes = xor8_get_just_h0_h1_h2(ki.hash, filter);
+    assert((ki.index == hashes.h0) || (ki.index == hashes.h1) ||
+           (ki.index == hashes.h2));
+    filter->fingerprints[ki.index] ^=
+        xor_fingerprint(ki.hash) ^ filter->fingerprints[hashes.h0] ^
+        filter->fingerprints[hashes.h1] ^ filter->fingerprints[hashes.h2];
+  }
+  xor_free_buffer(&buffer0);
+  xor_free_buffer(&buffer1);
+  xor_free_buffer(&buffer2);
+
+  free(sets);
+  free(Q);
+  free(stack);
+  return true;
+}
+
 //
 // construct the filter, returns true on success, false on failure.
 // most likely, a failure is due to too high a memory usage
@@ -410,6 +786,8 @@ bool xor8_populate(const uint64_t *keys, size_t size, xor8_t *filter) {
       // success
       break;
     }
+    //        printf("new random\n");
+
     // use a new random numbers
     filter->seed = xor_rng_splitmix64(&rng_counter);
   }
@@ -417,8 +795,7 @@ bool xor8_populate(const uint64_t *keys, size_t size, xor8_t *filter) {
   while (stack_size > 0) {
     xor_keyindex_t ki = stack[--stack_size];
     xor_h0h1h2_t hashes = xor8_get_just_h0_h1_h2(ki.hash, filter);
-    filter->fingerprints[ki.index] = 0;
-    filter->fingerprints[ki.index] =
+    filter->fingerprints[ki.index] ^=
         xor_fingerprint(ki.hash) ^ filter->fingerprints[hashes.h0] ^
         filter->fingerprints[hashes.h1] ^ filter->fingerprints[hashes.h2];
   }
@@ -427,6 +804,202 @@ bool xor8_populate(const uint64_t *keys, size_t size, xor8_t *filter) {
   free(stack);
   return true;
 }
+
+//
+// construct the filter, returns true on success, false on failure.
+// most likely, a failure is due to too high a memory usage
+// size is the number of keys
+// the caller is responsable for calling xor8_allocate(size,filter) before
+//
+bool xor16_buffered_populate(const uint64_t *keys, size_t size, xor16_t *filter) {
+  uint64_t rng_counter = 1;
+  filter->seed = xor_rng_splitmix64(&rng_counter);
+  size_t arrayLength = filter->blockLength * 3; // size of the backing array
+  xor_setbuffer_t buffer0, buffer1, buffer2;
+  bool ok = true;
+  size_t blockLength = filter->blockLength;
+
+  ok = ok && xor_init_buffer(&buffer0, blockLength);
+  ok = ok && xor_init_buffer(&buffer1, blockLength);
+  ok = ok && xor_init_buffer(&buffer2, blockLength);
+  if (!ok) {
+    xor_free_buffer(&buffer0);
+    xor_free_buffer(&buffer1);
+    xor_free_buffer(&buffer2);
+    return false;
+  }
+
+  xor_xorset_t *sets =
+      (xor_xorset_t *)malloc(arrayLength * sizeof(xor_xorset_t));
+  xor_xorset_t *sets0 = sets;
+  xor_xorset_t *sets1 = sets + blockLength;
+  xor_xorset_t *sets2 = sets + 2 * blockLength;
+
+  xor_keyindex_t *Q =
+      (xor_keyindex_t *)malloc(arrayLength * sizeof(xor_keyindex_t));
+  xor_keyindex_t *Q0 = Q;
+  xor_keyindex_t *Q1 = Q + blockLength;
+  xor_keyindex_t *Q2 = Q + 2 * blockLength;
+
+  xor_keyindex_t *stack =
+      (xor_keyindex_t *)malloc(size * sizeof(xor_keyindex_t));
+
+  if ((sets == NULL) || (Q == NULL) || (stack == NULL)) {
+    free(sets);
+    free(Q);
+    free(stack);
+    return false;
+  }
+
+  while (true) {
+    memset(sets, 0, sizeof(xor_xorset_t) * arrayLength);
+    for (size_t i = 0; i < size; i++) {
+      uint64_t key = keys[i];
+      xor_hashes_t hs = xor16_get_h0_h1_h2(key, filter);
+      xor_buffered_increment_counter(hs.h0, hs.h, &buffer0, sets0);
+      xor_buffered_increment_counter(hs.h1 - blockLength, hs.h, &buffer1,
+                                     sets1);
+      xor_buffered_increment_counter(hs.h2 - 2 * blockLength, hs.h, &buffer2,
+                                     sets2);
+    }
+    xor_flush_increment_buffer(&buffer0, sets0);
+    xor_flush_increment_buffer(&buffer1, sets1);
+    xor_flush_increment_buffer(&buffer2, sets2);
+    // todo: the flush should be sync with the detection that follows
+    // scan for values with a count of one
+    size_t Q0size = 0, Q1size = 0, Q2size = 0;
+    for (size_t i = 0; i < filter->blockLength; i++) {
+      if (sets0[i].count == 1) {
+        Q0[Q0size].index = i;
+        Q0[Q0size].hash = sets0[i].xormask;
+        Q0size++;
+      }
+    }
+
+    for (size_t i = 0; i < filter->blockLength; i++) {
+      if (sets1[i].count == 1) {
+        Q1[Q1size].index = i;
+        Q1[Q1size].hash = sets1[i].xormask;
+        Q1size++;
+      }
+    }
+    for (size_t i = 0; i < filter->blockLength; i++) {
+      if (sets2[i].count == 1) {
+        Q2[Q2size].index = i;
+        Q2[Q2size].hash = sets2[i].xormask;
+        Q2size++;
+      }
+    }
+
+    size_t stack_size = 0;
+    while (Q0size + Q1size + Q2size > 0) {
+      while (Q0size > 0) {
+        xor_keyindex_t keyindex = Q0[--Q0size];
+        size_t index = keyindex.index;
+        xor_make_buffer_current(&buffer0, sets0, index, Q0, &Q0size);
+
+        if (sets0[index].count == 0)
+          continue; // not actually possible after the initial scan.
+        assert(sets0[index].count == 1);
+        sets0[index].count = 0;
+        uint64_t hash = keyindex.hash;
+        uint32_t h1 = xor16_get_h1(hash, filter);
+        uint32_t h2 = xor16_get_h2(hash, filter);
+
+        assert(sets[h1].count > 0);
+        assert(sets[h2].count > 0);
+        stack[stack_size] = keyindex;
+        stack_size++;
+        xor_buffered_decrement_counter(h1 - blockLength, hash, &buffer1, sets1,
+                                       Q1, &Q1size);
+        xor_buffered_decrement_counter(h2 - 2 * blockLength, hash, &buffer2,
+                                       sets2, Q2, &Q2size);
+      }
+      if (Q1size == 0)
+        xor_flushone_decrement_buffer(&buffer1, sets1, Q1, &Q1size);
+
+      while (Q1size > 0) {
+        xor_keyindex_t keyindex = Q1[--Q1size];
+        size_t index = keyindex.index;
+        xor_make_buffer_current(&buffer1, sets1, index, Q1, &Q1size);
+
+        if (sets1[index].count == 0)
+          continue;
+        assert(sets1[index].count == 1);
+        sets1[index].count = 0;
+        uint64_t hash = keyindex.hash;
+        uint32_t h0 = xor16_get_h0(hash, filter);
+        uint32_t h2 = xor16_get_h2(hash, filter);
+        assert(sets[h0].count > 0);
+        assert(sets[h2].count > 0);
+        keyindex.index += blockLength;
+        stack[stack_size] = keyindex;
+        stack_size++;
+        xor_buffered_decrement_counter(h0, hash, &buffer0, sets0, Q0, &Q0size);
+        xor_buffered_decrement_counter(h2 - 2 * blockLength, hash, &buffer2,
+                                       sets2, Q2, &Q2size);
+      }
+      if (Q1size == 0)
+        xor_flushone_decrement_buffer(&buffer2, sets2, Q2, &Q2size);
+      while (Q2size > 0) {
+        xor_keyindex_t keyindex = Q2[--Q2size];
+        size_t index = keyindex.index;
+        xor_make_buffer_current(&buffer2, sets2, index, Q2, &Q2size);
+        if (sets2[index].count == 0)
+          continue;
+        assert(sets2[index].count == 1);
+
+        sets2[index].count = 0;
+        uint64_t hash = keyindex.hash;
+
+        uint32_t h0 = xor16_get_h0(hash, filter);
+        uint32_t h1 = xor16_get_h1(hash, filter);
+        assert(sets[h0].count > 0);
+        assert(sets[h1].count > 0);
+        keyindex.index += 2 * blockLength;
+
+        stack[stack_size] = keyindex;
+        stack_size++;
+        xor_buffered_decrement_counter(h0, hash, &buffer0, sets0, Q0, &Q0size);
+        xor_buffered_decrement_counter(h1 - blockLength, hash, &buffer1, sets1,
+                                       Q1, &Q1size);
+      }
+      if (Q0size == 0)
+        xor_flushone_decrement_buffer(&buffer0, sets0, Q0, &Q0size);
+      if ((Q0size + Q1size + Q2size == 0) && (stack_size < size)) {
+        // this should basically never happen
+        xor_flush_decrement_buffer(&buffer0, sets0, Q0, &Q0size);
+        xor_flush_decrement_buffer(&buffer1, sets1, Q1, &Q1size);
+        xor_flush_decrement_buffer(&buffer2, sets2, Q2, &Q2size);
+      }
+    }
+    if (stack_size == size) {
+      // success
+      break;
+    }
+
+    filter->seed = xor_rng_splitmix64(&rng_counter);
+  }
+  size_t stack_size = size;
+  while (stack_size > 0) {
+    xor_keyindex_t ki = stack[--stack_size];
+    xor_h0h1h2_t hashes = xor16_get_just_h0_h1_h2(ki.hash, filter);
+    assert((ki.index == hashes.h0) || (ki.index == hashes.h1) ||
+           (ki.index == hashes.h2));
+    filter->fingerprints[ki.index] ^=
+        xor_fingerprint(ki.hash) ^ filter->fingerprints[hashes.h0] ^
+        filter->fingerprints[hashes.h1] ^ filter->fingerprints[hashes.h2];
+  }
+  xor_free_buffer(&buffer0);
+  xor_free_buffer(&buffer1);
+  xor_free_buffer(&buffer2);
+
+  free(sets);
+  free(Q);
+  free(stack);
+  return true;
+}
+
 
 //
 // construct the filter, returns true on success, false on failure.
@@ -579,8 +1152,7 @@ bool xor16_populate(const uint64_t *keys, size_t size, xor16_t *filter) {
   while (stack_size > 0) {
     xor_keyindex_t ki = stack[--stack_size];
     xor_h0h1h2_t hashes = xor16_get_just_h0_h1_h2(ki.hash, filter);
-    filter->fingerprints[ki.index] = 0;
-    filter->fingerprints[ki.index] =
+    filter->fingerprints[ki.index] ^=
         xor_fingerprint(ki.hash) ^ filter->fingerprints[hashes.h0] ^
         filter->fingerprints[hashes.h1] ^ filter->fingerprints[hashes.h2];
   }
