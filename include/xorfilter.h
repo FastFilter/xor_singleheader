@@ -581,7 +581,7 @@ bool xor8_buffered_populate(const uint64_t *keys, size_t size, xor8_t *filter) {
         xor_buffered_decrement_counter(h2 - 2 * blockLength, hash, &buffer2,
                                        sets2, Q2, &Q2size);
       }
-      if (Q1size == 0)
+      if (Q2size == 0)
         xor_flushone_decrement_buffer(&buffer2, sets2, Q2, &Q2size);
       while (Q2size > 0) {
         xor_keyindex_t keyindex = Q2[--Q2size];
@@ -937,7 +937,7 @@ bool xor16_buffered_populate(const uint64_t *keys, size_t size, xor16_t *filter)
         xor_buffered_decrement_counter(h2 - 2 * blockLength, hash, &buffer2,
                                        sets2, Q2, &Q2size);
       }
-      if (Q1size == 0)
+      if (Q2size == 0)
         xor_flushone_decrement_buffer(&buffer2, sets2, Q2, &Q2size);
       while (Q2size > 0) {
         xor_keyindex_t keyindex = Q2[--Q2size];
