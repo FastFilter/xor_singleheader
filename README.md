@@ -52,6 +52,8 @@ xor16_free(filter);
 If the data is sizeable (e.g., 100,000,000 keys) and you have enough memory, you may want to replace  `xor16_populate` by `xor16_buffered_populate` for greater speed during construction.
 
 
+## Persistent usage
+
 The data structure is quite simple: two 64-bit integer and an array of either 8-bit (for xor8)
 or 16-bit (for xor16) integers. Thus you can easily save it to disk or memory-map it. E.g., we have
 
@@ -63,6 +65,57 @@ typedef struct xor16_s {
       *fingerprints; // points to 3*blockLength values
 } xor16_t;
 ```
+
+
+So, for example, you might be able to build an serialize the filter as follows:
+
+
+```C
+    xor8_t filter;
+    xor8_allocate(array_size, &filter);
+    xor8_buffered_populate(array, array_size, &filter);
+
+    
+    uint64_t seed = filter.seed;
+    uint64_t BlockLength = filter.blockLength;
+
+    FILE *write_ptr;
+    write_ptr = fopen(outputfilename, "wb");
+    fwrite(&seed, sizeof(seed), 1, write_ptr);
+    fwrite(&BlockLength, sizeof(BlockLength), 1, write_ptr);
+    fwrite(filter.fingerprints, sizeof(uint8_t) * 3 * BlockLength, 1,
+                   write_ptr);
+    fclose(write_ptr);
+```
+
+Then you might be able to use memory-file mapping to query it...
+
+
+```C
+    xor8_t filter;
+    filter.seed = seed;
+    filter.blockLength = BlockLength;
+
+    uint64_t seed = 0;
+    uint64_t BlockLength = 0;
+    fread(&seed, sizeof(seed), 1, fp);
+    fread(&BlockLength, sizeof(BlockLength), 1, fp) ;
+    FILE *fp = fopen(filename, "rb");
+    int fd = open(filename, O_RDONLY);
+
+    uint8_t *addr =
+      (uint8_t *)(mmap(NULL, length, PROT_READ,
+                       MAP_FILE | (shared ? MAP_SHARED : MAP_PRIVATE), fd, 0));
+    filter.fingerprints = addr + 3 * sizeof(uint64_t);
+    if (xor8_contain(hexval, &filter)) {
+      printf("Probably in the set.\n");
+    } else {
+      printf("Surely not in the set.\n");
+    }
+```
+
+
+## Running tests and benchmarks
 
 To run tests: `make test`.
 
