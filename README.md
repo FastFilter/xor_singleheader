@@ -8,8 +8,13 @@ They are also smaller than cuckoo filters.
 This is a simple C header-only library for Xor filters. It implements both xor8
 and x16.
 
+
 Simply add the `xorfilter.h` file to your project.  It is made available under the
 business-friendly Apache license.
+
+
+For a simple application built on this library, see 
+https://github.com/FastFilter/FilterPassword
 
 We are assuming that your set is made of 64-bit integers. If you have strings
 or other data structures, you need to hash them first to a 64-bit integer. It
