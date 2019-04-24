@@ -52,6 +52,10 @@ xor16_free(filter);
 If the data is sizeable (e.g., 100,000,000 keys) and you have enough memory, you may want to replace  `xor16_populate` by `xor16_buffered_populate` for greater speed during construction.
 
 
+## Memory requirement
+
+The construction of the filter needs a fair amount of memory: plan for about 64 bytes of memory per set entry.
+
 ## Persistent usage
 
 The data structure is quite simple: two 64-bit integer and an array of either 8-bit (for xor8)
