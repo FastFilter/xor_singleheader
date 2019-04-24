@@ -290,6 +290,8 @@ static inline bool xor_init_buffer(xor_setbuffer_t *buffer, size_t size) {
   if ((buffer->counts == NULL) || (buffer->buffer == NULL)) {
     free(buffer->counts);
     free(buffer->buffer);
+    buffer->counts = NULL;
+    buffer->buffer = NULL;
     return false;
   }
   memset(buffer->counts, 0, buffer->slotcount * sizeof(uint32_t));
@@ -458,13 +460,11 @@ bool xor8_buffered_populate(const uint64_t *keys, size_t size, xor8_t *filter) {
   filter->seed = xor_rng_splitmix64(&rng_counter);
   size_t arrayLength = filter->blockLength * 3; // size of the backing array
   xor_setbuffer_t buffer0, buffer1, buffer2;
-  bool ok = true;
   size_t blockLength = filter->blockLength;
-
-  ok = ok && xor_init_buffer(&buffer0, blockLength);
-  ok = ok && xor_init_buffer(&buffer1, blockLength);
-  ok = ok && xor_init_buffer(&buffer2, blockLength);
-  if (!ok) {
+  bool ok0 = xor_init_buffer(&buffer0, blockLength);
+  bool ok1 =  xor_init_buffer(&buffer1, blockLength);
+  bool ok2 =  xor_init_buffer(&buffer2, blockLength);
+  if (!ok0 || !ok1 || !ok2) {
     xor_free_buffer(&buffer0);
     xor_free_buffer(&buffer1);
     xor_free_buffer(&buffer2);
@@ -816,13 +816,11 @@ bool xor16_buffered_populate(const uint64_t *keys, size_t size, xor16_t *filter)
   filter->seed = xor_rng_splitmix64(&rng_counter);
   size_t arrayLength = filter->blockLength * 3; // size of the backing array
   xor_setbuffer_t buffer0, buffer1, buffer2;
-  bool ok = true;
   size_t blockLength = filter->blockLength;
-
-  ok = ok && xor_init_buffer(&buffer0, blockLength);
-  ok = ok && xor_init_buffer(&buffer1, blockLength);
-  ok = ok && xor_init_buffer(&buffer2, blockLength);
-  if (!ok) {
+  bool ok0 = xor_init_buffer(&buffer0, blockLength); 
+  bool ok1 =  xor_init_buffer(&buffer1, blockLength);
+  bool ok2 =  xor_init_buffer(&buffer2, blockLength);
+  if (!ok0 || !ok1 || !ok2) {
     xor_free_buffer(&buffer0);
     xor_free_buffer(&buffer1);
     xor_free_buffer(&buffer2);
