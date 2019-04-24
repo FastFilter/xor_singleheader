@@ -29,6 +29,8 @@ xor8_contain(somerandomvalue, &filter); // will be false with high probability
 xor8_free(filter);
 ```
 
+If the data is sizeable (e.g., 100,000,000 keys) and you have enough memory, you may want to replace  `xor8_populate` by `xor8_buffered_populate` for greater speed during construction.
+
 Or the xor16 filter (larger but more accurate)... (vanishingly small false-positive rate)
 
 ```C
@@ -41,6 +43,9 @@ xor16_contain(somerandomvalue, &filter); // will be false with high probability
 
 xor16_free(filter);
 ```
+
+If the data is sizeable (e.g., 100,000,000 keys) and you have enough memory, you may want to replace  `xor16_populate` by `xor16_buffered_populate` for greater speed during construction.
+
 
 The data structure is quite simple: two 64-bit integer and an array of either 8-bit (for xor8)
 or 16-bit (for xor16) integers. Thus you can easily save it to disk or memory-map it. E.g., we have
@@ -59,12 +64,32 @@ To run tests: `make test`.
 
 ```
 $ make test
-./unit
-testing xor16
-fpp 0.0000154000 (estimated)
+$ ./unit
+testing buffered xor8
+fpp 0.0039209000 (estimated)
+bits per entry 9.9
+testing buffered xor16
+fpp 0.0000153000 (estimated)
 bits per entry 19.7
 testing xor8
-fpp 0.0039015000 (estimated)
+fpp 0.0039452000 (estimated)
 bits per entry 9.9
+testing xor16
+fpp 0.0000145000 (estimated)
+bits per entry 19.7
+```
 
+To run construction benchmarks:
+```
+$ make bench
+$ ./bench
 
+testing buffered xor8 size = 100000000
+It took 14.915994 seconds to build an index over 100000000 values.
+testing xor8 size = 100000000
+It took 19.102584 seconds to build an index over 100000000 values.
+testing buffered xor16 size = 100000000
+It took 15.234039 seconds to build an index over 100000000 values.
+testing xor16 size = 100000000
+It took 19.373102 seconds to build an index over 100000000 values.
+```
