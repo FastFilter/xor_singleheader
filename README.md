@@ -52,6 +52,43 @@ xor16_free(filter);
 If the data is sizeable (e.g., 100,000,000 keys) and you have enough memory, you may want to replace  `xor16_populate` by `xor16_buffered_populate` for greater speed during construction.
 
 
+## C++ wrapper 
+
+If you want a C++ version, you can  roll your own:
+
+```C++
+#include "xorfilter.h"
+
+class Xor8 {
+public:
+    explicit Xor8(const size_t size) {
+        if (!xor8_allocate(size, &filter)) {
+            throw ::std::runtime_error("Allocation failed");
+        }
+    }
+    ~XorSingle() {
+        xor8_free(&filter);
+    }
+    bool AddAll(const uint64_t* data, const size_t start, const size_t end) {
+        return xor8_buffered_populate(data + start, end - start, &filter);
+    }
+    inline bool Contain(uint64_t &item) const {
+        return xor8_contain(item, &filter);
+    }
+    inline size_t SizeInBytes() const {
+        return xor8_size_in_bytes(&filter);
+    }
+    Xor8(Xor8 && o) : filter(o.filter)  {
+        o.filter.fingerprints = nullptr; // we take ownership for the data
+    }
+    xor8_s filter; 
+
+private:
+    Xor8(const Xor8 & o) = delete;
+};
+```
+
+
 ## Memory requirement
 
 The construction of the filter needs a fair amount of memory: plan for about 64 bytes of memory per set entry. We support up to 4 billion entries, but you need to have the memory capacity. To support 4 billion entries, we recommend a computer with 256 GB of free memory. You can get around memory requirements by splitting off the set into smaller sets.
