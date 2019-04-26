@@ -101,7 +101,7 @@ bool testbufferedxor16(size_t size) {
 }
 
 int main() {
-  for (size_t s = 1; s < 1000000000; s *= 10) {
+  for (size_t s = 10000000; s < 10000000; s *= 10) {
 
     testbufferedxor8(s);
     testxor8(s);
