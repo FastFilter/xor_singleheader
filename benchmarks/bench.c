@@ -15,13 +15,16 @@ bool testxor8(size_t size) {
     big_set[i] = i; // we use contiguous values
   }
   // we construct the filter
-  clock_t t;
-  t = clock();
-  xor8_populate(big_set, size, &filter);
-  t = clock() - t;
-  double time_taken = ((double)t) / CLOCKS_PER_SEC; // in seconds
-  printf("It took %f seconds to build an index over %zu values. \n", time_taken,
-         size);
+  xor8_populate(big_set, size, &filter); // warm the cache
+  for (size_t times = 0; times < 5; times++) {
+    clock_t t;
+    t = clock();
+    xor8_populate(big_set, size, &filter);
+    t = clock() - t;
+    double time_taken = ((double)t) / CLOCKS_PER_SEC; // in seconds
+    printf("It took %f seconds to build an index over %zu values. \n",
+           time_taken, size);
+  }
   xor8_free(&filter);
   free(big_set);
   return true;
@@ -39,18 +42,20 @@ bool testbufferedxor8(size_t size) {
     big_set[i] = i; // we use contiguous values
   }
   // we construct the filter
-  clock_t t;
-  t = clock();
-  xor8_buffered_populate(big_set, size, &filter);
-  t = clock() - t;
-  double time_taken = ((double)t) / CLOCKS_PER_SEC; // in seconds
-  printf("It took %f seconds to build an index over %zu values. \n", time_taken,
-         size);
+  xor8_buffered_populate(big_set, size, &filter); // warm the cache
+  for (size_t times = 0; times < 5; times++) {
+    clock_t t;
+    t = clock();
+    xor8_buffered_populate(big_set, size, &filter);
+    t = clock() - t;
+    double time_taken = ((double)t) / CLOCKS_PER_SEC; // in seconds
+    printf("It took %f seconds to build an index over %zu values. \n",
+           time_taken, size);
+  }
   xor8_free(&filter);
   free(big_set);
   return true;
 }
-
 
 bool testxor16(size_t size) {
   printf("testing xor16 ");
@@ -64,13 +69,16 @@ bool testxor16(size_t size) {
     big_set[i] = i; // we use contiguous values
   }
   // we construct the filter
-  clock_t t;
-  t = clock();
-  xor16_populate(big_set, size, &filter);
-  t = clock() - t;
-  double time_taken = ((double)t) / CLOCKS_PER_SEC; // in seconds
-  printf("It took %f seconds to build an index over %zu values. \n", time_taken,
-         size);
+  xor16_populate(big_set, size, &filter); // warm the cache
+  for (size_t times = 0; times < 5; times++) {
+    clock_t t;
+    t = clock();
+    xor16_populate(big_set, size, &filter);
+    t = clock() - t;
+    double time_taken = ((double)t) / CLOCKS_PER_SEC; // in seconds
+    printf("It took %f seconds to build an index over %zu values. \n",
+           time_taken, size);
+  }
   xor16_free(&filter);
   free(big_set);
   return true;
@@ -88,13 +96,16 @@ bool testbufferedxor16(size_t size) {
     big_set[i] = i; // we use contiguous values
   }
   // we construct the filter
-  clock_t t;
-  t = clock();
-  xor16_buffered_populate(big_set, size, &filter);
-  t = clock() - t;
-  double time_taken = ((double)t) / CLOCKS_PER_SEC; // in seconds
-  printf("It took %f seconds to build an index over %zu values. \n", time_taken,
-         size);
+  xor16_buffered_populate(big_set, size, &filter); // warm the cache
+  for (size_t times = 0; times < 5; times++) {
+    clock_t t;
+    t = clock();
+    xor16_buffered_populate(big_set, size, &filter);
+    t = clock() - t;
+    double time_taken = ((double)t) / CLOCKS_PER_SEC; // in seconds
+    printf("It took %f seconds to build an index over %zu values. \n",
+           time_taken, size);
+  }
   xor16_free(&filter);
   free(big_set);
   return true;
