@@ -54,7 +54,7 @@ If the data is sizeable (e.g., 100,000,000 keys) and you have enough memory, you
 
 ## Memory requirement
 
-The construction of the filter needs a fair amount of memory: plan for about 64 bytes of memory per set entry.
+The construction of the filter needs a fair amount of memory: plan for about 64 bytes of memory per set entry. We support up to 4 billion entries, but you need to have the memory capacity. To support 4 billion entries, we recommend a computer with 256 GB of free memory. You can get around memory requirements by splitting off the set into smaller sets.
 
 ## Persistent usage
 
@@ -69,6 +69,8 @@ typedef struct xor16_s {
       *fingerprints; // points to 3*blockLength values
 } xor16_t;
 ```
+
+(We use a 64-bit blockLength variable, but the current code only supports 32-bit lengths, so blockLength stores an integer smaller than 1<<32. )
 
 
 So, for example, you might be able to build an serialize the filter as follows:
