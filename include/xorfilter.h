@@ -462,8 +462,8 @@ bool xor8_buffered_populate(const uint64_t *keys, uint32_t size, xor8_t *filter)
   xor_setbuffer_t buffer0, buffer1, buffer2;
   size_t blockLength = filter->blockLength;
   bool ok0 = xor_init_buffer(&buffer0, blockLength);
-  bool ok1 =  xor_init_buffer(&buffer1, blockLength);
-  bool ok2 =  xor_init_buffer(&buffer2, blockLength);
+  bool ok1 = xor_init_buffer(&buffer1, blockLength);
+  bool ok2 = xor_init_buffer(&buffer2, blockLength);
   if (!ok0 || !ok1 || !ok2) {
     xor_free_buffer(&buffer0);
     xor_free_buffer(&buffer1);
@@ -492,6 +492,7 @@ bool xor8_buffered_populate(const uint64_t *keys, uint32_t size, xor8_t *filter)
     free(stack);
     return false;
   }
+  memset(filter->fingerprints, 0, sizeof(uint8_t) * arrayLength);
 
   while (true) {
     memset(sets, 0, sizeof(xor_xorset_t) * arrayLength);
@@ -625,12 +626,15 @@ bool xor8_buffered_populate(const uint64_t *keys, uint32_t size, xor8_t *filter)
   size_t stack_size = size;
   while (stack_size > 0) {
     xor_keyindex_t ki = stack[--stack_size];
-    xor_h0h1h2_t hashes = xor8_get_just_h0_h1_h2(ki.hash, filter);
-    assert((ki.index == hashes.h0) || (ki.index == hashes.h1) ||
-           (ki.index == hashes.h2));
-    filter->fingerprints[ki.index] ^=
-        xor_fingerprint(ki.hash) ^ filter->fingerprints[hashes.h0] ^
-        filter->fingerprints[hashes.h1] ^ filter->fingerprints[hashes.h2];
+    uint64_t val = xor_fingerprint(ki.hash);
+    if(ki.index < blockLength) {
+      val ^= filter->fingerprints[xor8_get_h1(ki.hash,filter)] ^ filter->fingerprints[xor8_get_h2(ki.hash,filter)];
+    } else if(ki.index < 2 * blockLength) {
+      val ^= filter->fingerprints[xor8_get_h0(ki.hash,filter)] ^ filter->fingerprints[xor8_get_h2(ki.hash,filter)];
+    } else {
+      val ^= filter->fingerprints[xor8_get_h0(ki.hash,filter)] ^ filter->fingerprints[xor8_get_h1(ki.hash,filter)];
+    }
+    filter->fingerprints[ki.index] = val;
   }
   xor_free_buffer(&buffer0);
   xor_free_buffer(&buffer1);
@@ -794,10 +798,15 @@ bool xor8_populate(const uint64_t *keys, size_t size, xor8_t *filter) {
   size_t stack_size = size;
   while (stack_size > 0) {
     xor_keyindex_t ki = stack[--stack_size];
-    xor_h0h1h2_t hashes = xor8_get_just_h0_h1_h2(ki.hash, filter);
-    filter->fingerprints[ki.index] ^=
-        xor_fingerprint(ki.hash) ^ filter->fingerprints[hashes.h0] ^
-        filter->fingerprints[hashes.h1] ^ filter->fingerprints[hashes.h2];
+    uint64_t val = xor_fingerprint(ki.hash);
+    if(ki.index < filter->blockLength) {
+      val ^= filter->fingerprints[xor8_get_h1(ki.hash,filter)] ^ filter->fingerprints[xor8_get_h2(ki.hash,filter)];
+    } else if(ki.index < 2 * filter->blockLength) {
+      val ^= filter->fingerprints[xor8_get_h0(ki.hash,filter)] ^ filter->fingerprints[xor8_get_h2(ki.hash,filter)];
+    } else {
+      val ^= filter->fingerprints[xor8_get_h0(ki.hash,filter)] ^ filter->fingerprints[xor8_get_h1(ki.hash,filter)];
+    }
+    filter->fingerprints[ki.index] = val;
   }
   free(sets);
   free(Q);
@@ -981,12 +990,15 @@ bool xor16_buffered_populate(const uint64_t *keys, uint32_t size, xor16_t *filte
   size_t stack_size = size;
   while (stack_size > 0) {
     xor_keyindex_t ki = stack[--stack_size];
-    xor_h0h1h2_t hashes = xor16_get_just_h0_h1_h2(ki.hash, filter);
-    assert((ki.index == hashes.h0) || (ki.index == hashes.h1) ||
-           (ki.index == hashes.h2));
-    filter->fingerprints[ki.index] ^=
-        xor_fingerprint(ki.hash) ^ filter->fingerprints[hashes.h0] ^
-        filter->fingerprints[hashes.h1] ^ filter->fingerprints[hashes.h2];
+    uint64_t val = xor_fingerprint(ki.hash);
+    if(ki.index < blockLength) {
+      val ^= filter->fingerprints[xor16_get_h1(ki.hash,filter)] ^ filter->fingerprints[xor16_get_h2(ki.hash,filter)];
+    } else if(ki.index < 2 * blockLength) {
+      val ^= filter->fingerprints[xor16_get_h0(ki.hash,filter)] ^ filter->fingerprints[xor16_get_h2(ki.hash,filter)];
+    } else {
+      val ^= filter->fingerprints[xor16_get_h0(ki.hash,filter)] ^ filter->fingerprints[xor16_get_h1(ki.hash,filter)];
+    }
+    filter->fingerprints[ki.index] = val;
   }
   xor_free_buffer(&buffer0);
   xor_free_buffer(&buffer1);
@@ -1149,10 +1161,15 @@ bool xor16_populate(const uint64_t *keys, uint32_t size, xor16_t *filter) {
   size_t stack_size = size;
   while (stack_size > 0) {
     xor_keyindex_t ki = stack[--stack_size];
-    xor_h0h1h2_t hashes = xor16_get_just_h0_h1_h2(ki.hash, filter);
-    filter->fingerprints[ki.index] ^=
-        xor_fingerprint(ki.hash) ^ filter->fingerprints[hashes.h0] ^
-        filter->fingerprints[hashes.h1] ^ filter->fingerprints[hashes.h2];
+    uint64_t val = xor_fingerprint(ki.hash);
+    if(ki.index < filter->blockLength) {
+      val ^= filter->fingerprints[xor16_get_h1(ki.hash,filter)] ^ filter->fingerprints[xor16_get_h2(ki.hash,filter)];
+    } else if(ki.index < 2 * filter->blockLength) {
+      val ^= filter->fingerprints[xor16_get_h0(ki.hash,filter)] ^ filter->fingerprints[xor16_get_h2(ki.hash,filter)];
+    } else {
+      val ^= filter->fingerprints[xor16_get_h0(ki.hash,filter)] ^ filter->fingerprints[xor16_get_h1(ki.hash,filter)];
+    }
+    filter->fingerprints[ki.index] = val;
   }
   free(sets);
   free(Q);
