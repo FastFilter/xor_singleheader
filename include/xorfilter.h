@@ -401,7 +401,6 @@ static inline uint32_t xor_flushone_decrement_buffer(xor_setbuffer_t *buffer,
     }
   }
   uint32_t slot = bestslot;
-  // for(uint32_t slot = 0; slot < buffer->slotcount; slot++) {
   uint32_t base = (slot << buffer->insignificantbits);
   for (size_t i = 0; i < buffer->counts[slot]; i++) {
     xor_keyindex_t ki = buffer->buffer[i + base];
@@ -414,7 +413,6 @@ static inline uint32_t xor_flushone_decrement_buffer(xor_setbuffer_t *buffer,
     }
   }
   buffer->counts[slot] = 0;
-  //}
   return bestslot;
 }
 
@@ -476,7 +474,6 @@ bool xor8_buffered_populate(const uint64_t *keys, uint32_t size, xor8_t *filter)
     xor_flush_increment_buffer(&buffer0, sets0);
     xor_flush_increment_buffer(&buffer1, sets1);
     xor_flush_increment_buffer(&buffer2, sets2);
-    // todo: the flush should be sync with the detection that follows
     // scan for values with a count of one
     size_t Q0size = 0, Q1size = 0, Q2size = 0;
     for (size_t i = 0; i < filter->blockLength; i++) {
@@ -655,7 +652,6 @@ bool xor8_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
       sets2[hs.h2].xormask ^= hs.h;
       sets2[hs.h2].count++;
     }
-    // todo: the flush should be sync with the detection that follows
     // scan for values with a count of one
     size_t Q0size = 0, Q1size = 0, Q2size = 0;
     for (size_t i = 0; i < filter->blockLength; i++) {
@@ -859,7 +855,6 @@ bool xor16_buffered_populate(const uint64_t *keys, uint32_t size, xor16_t *filte
     xor_flush_increment_buffer(&buffer0, sets0);
     xor_flush_increment_buffer(&buffer1, sets1);
     xor_flush_increment_buffer(&buffer2, sets2);
-    // todo: the flush should be sync with the detection that follows
     // scan for values with a count of one
     size_t Q0size = 0, Q1size = 0, Q2size = 0;
     for (size_t i = 0; i < filter->blockLength; i++) {
@@ -1040,7 +1035,6 @@ bool xor16_populate(const uint64_t *keys, uint32_t size, xor16_t *filter) {
       sets2[hs.h2].xormask ^= hs.h;
       sets2[hs.h2].count++;
     }
-    // todo: the flush should be sync with the detection that follows
     // scan for values with a count of one
     size_t Q0size = 0, Q1size = 0, Q2size = 0;
     for (size_t i = 0; i < filter->blockLength; i++) {
@@ -1073,7 +1067,6 @@ bool xor16_populate(const uint64_t *keys, uint32_t size, xor16_t *filter) {
         size_t index = keyindex.index;
         if (sets0[index].count == 0)
           continue; // not actually possible after the initial scan.
-        //sets0[index].count = 0;
         uint64_t hash = keyindex.hash;
         uint32_t h1 = xor16_get_h1(hash, filter);
         uint32_t h2 = xor16_get_h2(hash, filter);
