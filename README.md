@@ -8,7 +8,7 @@ They are also smaller than cuckoo filters.
 <img src="figures/comparison.png" width="50%"/>
 
 This is a simple C header-only library for Xor filters. It implements both xor8
-and x16.
+and xor16.
 
 
 Simply add the `xorfilter.h` file to your project.  It is made available under the
