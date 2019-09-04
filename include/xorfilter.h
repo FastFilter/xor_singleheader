@@ -296,11 +296,12 @@ static inline void xor_buffered_increment_counter(uint32_t index, uint64_t hash,
   buffer->buffer[addr].index = index;
   buffer->buffer[addr].hash = hash;
   buffer->counts[slot]++;
+  size_t offset = (slot << buffer->insignificantbits);
   if (buffer->counts[slot] == buffer->slotsize) {
     // must empty the buffer
-    for (size_t i = 0; i < buffer->slotsize; i++) {
+    for (size_t i = offset; i < buffer->slotsize + offset; i++) {
       xor_keyindex_t ki =
-          buffer->buffer[i + (slot << buffer->insignificantbits)];
+          buffer->buffer[i];
       sets[ki.index].xormask ^= ki.hash;
       sets[ki.index].count++;
     }
@@ -313,8 +314,9 @@ static inline void xor_make_buffer_current(xor_setbuffer_t *buffer,
                                            xor_keyindex_t *Q, size_t *Qsize) {
   uint32_t slot = index >> buffer->insignificantbits;
   if(buffer->counts[slot] > 0) { // uncommon!
-    for (size_t i = 0; i < buffer->counts[slot]; i++) {
-      xor_keyindex_t ki = buffer->buffer[i + (slot << buffer->insignificantbits)];
+    size_t offset = (slot << buffer->insignificantbits);
+    for (size_t i = offset; i < buffer->counts[slot] + offset; i++) {
+      xor_keyindex_t ki = buffer->buffer[i];
       sets[ki.index].xormask ^= ki.hash;
       sets[ki.index].count--;
       if (sets[ki.index].count == 1) {// this branch might be hard to predict
@@ -340,9 +342,10 @@ static inline void xor_buffered_decrement_counter(uint32_t index, uint64_t hash,
   buffer->buffer[addr].hash = hash;
   buffer->counts[slot]++;
   if (buffer->counts[slot] == buffer->slotsize) {
-    for (size_t i = 0; i < buffer->counts[slot]; i++) {
+    size_t offset = (slot << buffer->insignificantbits);
+    for (size_t i = offset; i < buffer->counts[slot] + offset; i++) {
       xor_keyindex_t ki =
-          buffer->buffer[i + (slot << buffer->insignificantbits)];
+          buffer->buffer[i];
       sets[ki.index].xormask ^= ki.hash;
       sets[ki.index].count--;
       if (sets[ki.index].count == 1) {
@@ -358,9 +361,10 @@ static inline void xor_buffered_decrement_counter(uint32_t index, uint64_t hash,
 static inline void xor_flush_increment_buffer(xor_setbuffer_t *buffer,
                                               xor_xorset_t *sets) {
   for (uint32_t slot = 0; slot < buffer->slotcount; slot++) {
-    for (size_t i = 0; i < buffer->counts[slot]; i++) {
+    size_t offset = (slot << buffer->insignificantbits);
+    for (size_t i = offset; i < buffer->counts[slot] + offset; i++) {
       xor_keyindex_t ki =
-          buffer->buffer[i + (slot << buffer->insignificantbits)];
+          buffer->buffer[i];
       sets[ki.index].xormask ^= ki.hash;
       sets[ki.index].count++;
     }
@@ -374,8 +378,8 @@ static inline void xor_flush_decrement_buffer(xor_setbuffer_t *buffer,
                                               size_t *Qsize) {
   for (uint32_t slot = 0; slot < buffer->slotcount; slot++) {
     uint32_t base = (slot << buffer->insignificantbits);
-    for (size_t i = 0; i < buffer->counts[slot]; i++) {
-      xor_keyindex_t ki = buffer->buffer[i + base];
+    for (size_t i = base; i < buffer->counts[slot] + base; i++) {
+      xor_keyindex_t ki = buffer->buffer[i];
       sets[ki.index].xormask ^= ki.hash;
       sets[ki.index].count--;
       if (sets[ki.index].count == 1) {
@@ -403,8 +407,8 @@ static inline uint32_t xor_flushone_decrement_buffer(xor_setbuffer_t *buffer,
   uint32_t slot = bestslot;
   // for(uint32_t slot = 0; slot < buffer->slotcount; slot++) {
   uint32_t base = (slot << buffer->insignificantbits);
-  for (size_t i = 0; i < buffer->counts[slot]; i++) {
-    xor_keyindex_t ki = buffer->buffer[i + base];
+  for (size_t i = base; i < buffer->counts[slot] + base; i++) {
+    xor_keyindex_t ki = buffer->buffer[i];
     sets[ki.index].xormask ^= ki.hash;
     sets[ki.index].count--;
     if (sets[ki.index].count == 1) {
