@@ -289,8 +289,8 @@ static inline void xor_free_buffer(xor_setbuffer_t *buffer) {
 }
 
 static inline void xor_buffered_increment_counter(uint32_t index, uint64_t hash,
-                                                  xor_setbuffer_t *buffer,
-                                                  xor_xorset_t *sets) {
+                                                  xor_setbuffer_t * __restrict buffer,
+                                                  xor_xorset_t * __restrict  sets) {
   uint32_t slot = index >> buffer->insignificantbits;
   size_t addr = buffer->counts[slot] + (slot << buffer->insignificantbits);
   buffer->buffer[addr].index = index;
@@ -309,9 +309,9 @@ static inline void xor_buffered_increment_counter(uint32_t index, uint64_t hash,
   }
 }
 
-static inline void xor_make_buffer_current(xor_setbuffer_t *buffer,
-                                           xor_xorset_t *sets, uint32_t index,
-                                           xor_keyindex_t *Q, size_t *Qsize) {
+static inline void xor_make_buffer_current(xor_setbuffer_t * __restrict  buffer,
+                                           xor_xorset_t * __restrict sets, uint32_t index,
+                                           xor_keyindex_t * __restrict  Q, size_t * __restrict  Qsize) {
   uint32_t slot = index >> buffer->insignificantbits;
   if(buffer->counts[slot] > 0) { // uncommon!
     size_t qsize = *Qsize;
@@ -334,10 +334,10 @@ static inline void xor_make_buffer_current(xor_setbuffer_t *buffer,
 
 
 static inline void xor_buffered_decrement_counter(uint32_t index, uint64_t hash,
-                                                  xor_setbuffer_t *buffer,
-                                                  xor_xorset_t *sets,
-                                                  xor_keyindex_t *Q,
-                                                  size_t *Qsize) {
+                                                  xor_setbuffer_t * __restrict buffer,
+                                                  xor_xorset_t * __restrict  sets,
+                                                  xor_keyindex_t * __restrict  Q,
+                                                  size_t * __restrict  Qsize) {
   uint32_t slot = index >> buffer->insignificantbits;
   size_t addr = buffer->counts[slot] + (slot << buffer->insignificantbits);
   buffer->buffer[addr].index = index;
@@ -362,8 +362,8 @@ static inline void xor_buffered_decrement_counter(uint32_t index, uint64_t hash,
   }
 }
 
-static inline void xor_flush_increment_buffer(xor_setbuffer_t *buffer,
-                                              xor_xorset_t *sets) {
+static inline void xor_flush_increment_buffer(xor_setbuffer_t * __restrict  buffer,
+                                              xor_xorset_t * __restrict  sets) {
   for (uint32_t slot = 0; slot < buffer->slotcount; slot++) {
     size_t offset = (slot << buffer->insignificantbits);
     for (size_t i = offset; i < buffer->counts[slot] + offset; i++) {
@@ -376,10 +376,10 @@ static inline void xor_flush_increment_buffer(xor_setbuffer_t *buffer,
   }
 }
 
-static inline void xor_flush_decrement_buffer(xor_setbuffer_t *buffer,
-                                              xor_xorset_t *sets,
-                                              xor_keyindex_t *Q,
-                                              size_t *Qsize) {
+static inline void xor_flush_decrement_buffer(xor_setbuffer_t * __restrict  buffer,
+                                              xor_xorset_t *__restrict  sets,
+                                              xor_keyindex_t * __restrict Q,
+                                              size_t * __restrict Qsize) {
   size_t qsize = *Qsize;
   for (uint32_t slot = 0; slot < buffer->slotcount; slot++) {
     uint32_t base = (slot << buffer->insignificantbits);
@@ -398,10 +398,10 @@ static inline void xor_flush_decrement_buffer(xor_setbuffer_t *buffer,
   *Qsize = qsize;
 }
 
-static inline uint32_t xor_flushone_decrement_buffer(xor_setbuffer_t *buffer,
-                                                     xor_xorset_t *sets,
-                                                     xor_keyindex_t *Q,
-                                                     size_t *Qsize) {
+static inline uint32_t xor_flushone_decrement_buffer(xor_setbuffer_t * __restrict  buffer,
+                                                     xor_xorset_t * __restrict sets,
+                                                     xor_keyindex_t * __restrict Q,
+                                                     size_t * __restrict  Qsize) {
   uint32_t bestslot = 0;
   uint32_t bestcount = buffer->counts[bestslot];
   for (uint32_t slot = 1; slot < buffer->slotcount; slot++) {
@@ -436,7 +436,7 @@ static inline uint32_t xor_flushone_decrement_buffer(xor_setbuffer_t *buffer,
 // size is the number of keys
 // the caller is responsable for calling xor8_allocate(size,filter) before
 //
-bool xor8_buffered_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
+bool xor8_buffered_populate(const uint64_t * __restrict keys, uint32_t size, xor8_t * __restrict  filter) {
   uint64_t rng_counter = 1;
   filter->seed = xor_rng_splitmix64(&rng_counter);
   size_t arrayLength = filter->blockLength * 3; // size of the backing array
@@ -454,17 +454,17 @@ bool xor8_buffered_populate(const uint64_t *keys, uint32_t size, xor8_t *filter)
 
   xor_xorset_t *sets =
       (xor_xorset_t *)malloc(arrayLength * sizeof(xor_xorset_t));
-  xor_xorset_t *sets0 = sets;
-  xor_xorset_t *sets1 = sets + blockLength;
-  xor_xorset_t *sets2 = sets + 2 * blockLength;
+  xor_xorset_t * __restrict  sets0 = sets;
+  xor_xorset_t * __restrict  sets1 = sets + blockLength;
+  xor_xorset_t * __restrict  sets2 = sets + 2 * blockLength;
 
   xor_keyindex_t *Q =
       (xor_keyindex_t *)malloc(arrayLength * sizeof(xor_keyindex_t));
-  xor_keyindex_t *Q0 = Q;
-  xor_keyindex_t *Q1 = Q + blockLength;
-  xor_keyindex_t *Q2 = Q + 2 * blockLength;
+  xor_keyindex_t * __restrict  Q0 = Q;
+  xor_keyindex_t * __restrict  Q1 = Q + blockLength;
+  xor_keyindex_t * __restrict Q2 = Q + 2 * blockLength;
 
-  xor_keyindex_t *stack =
+  xor_keyindex_t * __restrict  stack =
       (xor_keyindex_t *)malloc(size * sizeof(xor_keyindex_t));
 
   if ((sets == NULL) || (Q == NULL) || (stack == NULL)) {
@@ -594,9 +594,9 @@ bool xor8_buffered_populate(const uint64_t *keys, uint32_t size, xor8_t *filter)
 
     filter->seed = xor_rng_splitmix64(&rng_counter);
   }
-  uint8_t * fingerprints0 = filter->fingerprints;
-  uint8_t * fingerprints1 = filter->fingerprints + blockLength;
-  uint8_t * fingerprints2 = filter->fingerprints + 2 * blockLength;
+  uint8_t * __restrict  fingerprints0 = filter->fingerprints;
+  uint8_t * __restrict  fingerprints1 = filter->fingerprints + blockLength;
+  uint8_t * __restrict  fingerprints2 = filter->fingerprints + 2 * blockLength;
 
   size_t stack_size = size;
   while (stack_size > 0) {
@@ -627,7 +627,7 @@ bool xor8_buffered_populate(const uint64_t *keys, uint32_t size, xor8_t *filter)
 // size is the number of keys
 // the caller is responsable for calling xor8_allocate(size,filter) before
 //
-bool xor8_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
+bool xor8_populate(const uint64_t * __restrict  keys, uint32_t size, xor8_t * __restrict filter) {
   uint64_t rng_counter = 1;
   filter->seed = xor_rng_splitmix64(&rng_counter);
   size_t arrayLength = filter->blockLength * 3; // size of the backing array
@@ -635,17 +635,17 @@ bool xor8_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
 
   xor_xorset_t *sets =
       (xor_xorset_t *)malloc(arrayLength * sizeof(xor_xorset_t));
-  xor_xorset_t *sets0 = sets;
-  xor_xorset_t *sets1 = sets + blockLength;
-  xor_xorset_t *sets2 = sets + 2 * blockLength;
+  xor_xorset_t * __restrict  sets0 = sets;
+  xor_xorset_t * __restrict  sets1 = sets + blockLength;
+  xor_xorset_t * __restrict  sets2 = sets + 2 * blockLength;
 
   xor_keyindex_t *Q =
       (xor_keyindex_t *)malloc(arrayLength * sizeof(xor_keyindex_t));
-  xor_keyindex_t *Q0 = Q;
-  xor_keyindex_t *Q1 = Q + blockLength;
-  xor_keyindex_t *Q2 = Q + 2 * blockLength;
+  xor_keyindex_t * __restrict  Q0 = Q;
+  xor_keyindex_t * __restrict  Q1 = Q + blockLength;
+  xor_keyindex_t * __restrict  Q2 = Q + 2 * blockLength;
 
-  xor_keyindex_t *stack =
+  xor_keyindex_t * __restrict  stack =
       (xor_keyindex_t *)malloc(size * sizeof(xor_keyindex_t));
 
   if ((sets == NULL) || (Q == NULL) || (stack == NULL)) {
@@ -788,9 +788,9 @@ bool xor8_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
 
     filter->seed = xor_rng_splitmix64(&rng_counter);
   }
-  uint8_t * fingerprints0 = filter->fingerprints;
-  uint8_t * fingerprints1 = filter->fingerprints + blockLength;
-  uint8_t * fingerprints2 = filter->fingerprints + 2 * blockLength;
+  uint8_t * __restrict  fingerprints0 = filter->fingerprints;
+  uint8_t * __restrict  fingerprints1 = filter->fingerprints + blockLength;
+  uint8_t * __restrict  fingerprints2 = filter->fingerprints + 2 * blockLength;
 
   size_t stack_size = size;
   while (stack_size > 0) {
@@ -819,7 +819,7 @@ bool xor8_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
 // size is the number of keys
 // the caller is responsable for calling xor16_allocate(size,filter) before
 //
-bool xor16_buffered_populate(const uint64_t *keys, uint32_t size, xor16_t *filter) {
+bool xor16_buffered_populate(const uint64_t *__restrict  keys, uint32_t size, xor16_t * __restrict filter) {
   uint64_t rng_counter = 1;
   filter->seed = xor_rng_splitmix64(&rng_counter);
   size_t arrayLength = filter->blockLength * 3; // size of the backing array
@@ -837,17 +837,17 @@ bool xor16_buffered_populate(const uint64_t *keys, uint32_t size, xor16_t *filte
 
   xor_xorset_t *sets =
       (xor_xorset_t *)malloc(arrayLength * sizeof(xor_xorset_t));
-  xor_xorset_t *sets0 = sets;
-  xor_xorset_t *sets1 = sets + blockLength;
-  xor_xorset_t *sets2 = sets + 2 * blockLength;
+  xor_xorset_t * __restrict sets0 = sets;
+  xor_xorset_t * __restrict sets1 = sets + blockLength;
+  xor_xorset_t * __restrict sets2 = sets + 2 * blockLength;
 
   xor_keyindex_t *Q =
       (xor_keyindex_t *)malloc(arrayLength * sizeof(xor_keyindex_t));
-  xor_keyindex_t *Q0 = Q;
-  xor_keyindex_t *Q1 = Q + blockLength;
-  xor_keyindex_t *Q2 = Q + 2 * blockLength;
+  xor_keyindex_t * __restrict Q0 = Q;
+  xor_keyindex_t * __restrict Q1 = Q + blockLength;
+  xor_keyindex_t * __restrict Q2 = Q + 2 * blockLength;
 
-  xor_keyindex_t *stack =
+  xor_keyindex_t * __restrict stack =
       (xor_keyindex_t *)malloc(size * sizeof(xor_keyindex_t));
 
   if ((sets == NULL) || (Q == NULL) || (stack == NULL)) {
@@ -977,9 +977,9 @@ bool xor16_buffered_populate(const uint64_t *keys, uint32_t size, xor16_t *filte
 
     filter->seed = xor_rng_splitmix64(&rng_counter);
   }
-  uint16_t * fingerprints0 = filter->fingerprints;
-  uint16_t * fingerprints1 = filter->fingerprints + blockLength;
-  uint16_t * fingerprints2 = filter->fingerprints + 2 * blockLength;
+  uint16_t * __restrict  fingerprints0 = filter->fingerprints;
+  uint16_t * __restrict  fingerprints1 = filter->fingerprints + blockLength;
+  uint16_t * __restrict  fingerprints2 = filter->fingerprints + 2 * blockLength;
 
   size_t stack_size = size;
   while (stack_size > 0) {
@@ -1020,17 +1020,17 @@ bool xor16_populate(const uint64_t *keys, uint32_t size, xor16_t *filter) {
 
   xor_xorset_t *sets =
       (xor_xorset_t *)malloc(arrayLength * sizeof(xor_xorset_t));
-  xor_xorset_t *sets0 = sets;
-  xor_xorset_t *sets1 = sets + blockLength;
-  xor_xorset_t *sets2 = sets + 2 * blockLength;
+  xor_xorset_t * __restrict sets0 = sets;
+  xor_xorset_t * __restrict sets1 = sets + blockLength;
+  xor_xorset_t * __restrict sets2 = sets + 2 * blockLength;
 
   xor_keyindex_t *Q =
       (xor_keyindex_t *)malloc(arrayLength * sizeof(xor_keyindex_t));
-  xor_keyindex_t *Q0 = Q;
-  xor_keyindex_t *Q1 = Q + blockLength;
-  xor_keyindex_t *Q2 = Q + 2 * blockLength;
+  xor_keyindex_t * __restrict Q0 = Q;
+  xor_keyindex_t * __restrict Q1 = Q + blockLength;
+  xor_keyindex_t * __restrict Q2 = Q + 2 * blockLength;
 
-  xor_keyindex_t *stack =
+  xor_keyindex_t * __restrict stack =
       (xor_keyindex_t *)malloc(size * sizeof(xor_keyindex_t));
 
   if ((sets == NULL) || (Q == NULL) || (stack == NULL)) {
@@ -1173,9 +1173,9 @@ bool xor16_populate(const uint64_t *keys, uint32_t size, xor16_t *filter) {
 
     filter->seed = xor_rng_splitmix64(&rng_counter);
   }
-  uint16_t * fingerprints0 = filter->fingerprints;
-  uint16_t * fingerprints1 = filter->fingerprints + blockLength;
-  uint16_t * fingerprints2 = filter->fingerprints + 2 * blockLength;
+  uint16_t * __restrict  fingerprints0 = filter->fingerprints;
+  uint16_t * __restrict  fingerprints1 = filter->fingerprints + blockLength;
+  uint16_t * __restrict  fingerprints2 = filter->fingerprints + 2 * blockLength;
 
   size_t stack_size = size;
   while (stack_size > 0) {
