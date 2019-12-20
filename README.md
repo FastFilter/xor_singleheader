@@ -41,6 +41,8 @@ xor8_free(filter);
 
 If the data is sizeable (e.g., 100,000,000 keys) and you have enough memory, you may want to replace  `xor8_populate` by `xor8_buffered_populate` for greater speed during construction.
 
+You should ensure that you have no duplicated keys.
+
 Or the xor16 filter (larger but more accurate)... (vanishingly small false-positive rate)
 
 ```C
