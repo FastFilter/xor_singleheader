@@ -434,7 +434,8 @@ static inline uint32_t xor_flushone_decrement_buffer(xor_setbuffer_t *buffer,
 // construct the filter, returns true on success, false on failure.
 // most likely, a failure is due to too high a memory usage
 // size is the number of keys
-// the caller is responsable for calling xor8_allocate(size,filter) before
+// The caller is responsible for calling xor8_allocate(size,filter) before.
+// The caller is responsible to ensure that there are no duplicated keys.
 //
 bool xor8_buffered_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
   uint64_t rng_counter = 1;
@@ -625,7 +626,8 @@ bool xor8_buffered_populate(const uint64_t *keys, uint32_t size, xor8_t *filter)
 // construct the filter, returns true on success, false on failure.
 // most likely, a failure is due to too high a memory usage
 // size is the number of keys
-// the caller is responsable for calling xor8_allocate(size,filter) before
+// The caller is responsable for calling xor8_allocate(size,filter) before.
+// The caller is responsible to ensure that there are no duplicated keys.
 //
 bool xor8_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
   uint64_t rng_counter = 1;
@@ -817,7 +819,8 @@ bool xor8_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
 // construct the filter, returns true on success, false on failure.
 // most likely, a failure is due to too high a memory usage
 // size is the number of keys
-// the caller is responsable for calling xor16_allocate(size,filter) before
+// The caller is responsable for calling xor16_allocate(size,filter) before.
+// The caller is responsible to ensure that there are no duplicated keys.
 //
 bool xor16_buffered_populate(const uint64_t *keys, uint32_t size, xor16_t *filter) {
   uint64_t rng_counter = 1;
@@ -1010,7 +1013,8 @@ bool xor16_buffered_populate(const uint64_t *keys, uint32_t size, xor16_t *filte
 // construct the filter, returns true on success, false on failure.
 // most likely, a failure is due to too high a memory usage
 // size is the number of keys
-// the caller is responsable for calling xor16_allocate(size,filter) before
+// The caller is responsable for calling xor16_allocate(size,filter) before.
+// The caller is responsible to ensure that there are no duplicated keys.
 //
 bool xor16_populate(const uint64_t *keys, uint32_t size, xor16_t *filter) {
   uint64_t rng_counter = 1;
