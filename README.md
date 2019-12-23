@@ -36,7 +36,7 @@ xor8_populate(big_set, size, &filter);
 xor8_contain(big_set[0], &filter); // will be true
 xor8_contain(somerandomvalue, &filter); // will be false with high probability
 
-xor8_free(filter);
+xor8_free(&filter);
 ```
 
 If the data is sizeable (e.g., 100,000,000 keys) and you have enough memory, you may want to replace  `xor8_populate` by `xor8_buffered_populate` for greater speed during construction.
@@ -53,7 +53,7 @@ xor16_populate(big_set, size, &filter);
 xor16_contain(big_set[0], &filter); // will be true
 xor16_contain(somerandomvalue, &filter); // will be false with high probability
 
-xor16_free(filter);
+xor16_free(&filter);
 ```
 
 If the data is sizeable (e.g., 100,000,000 keys) and you have enough memory, you may want to replace  `xor16_populate` by `xor16_buffered_populate` for greater speed during construction.
@@ -201,3 +201,8 @@ It took 15.234039 seconds to build an index over 100000000 values.
 testing xor16 size = 100000000
 It took 19.373102 seconds to build an index over 100000000 values.
 ```
+
+## Implementations
+
+* [Go](https://github.com/FastFilter/xorfilter)
+* [Erlang](https://github.com/mpope9/exor_filter)
