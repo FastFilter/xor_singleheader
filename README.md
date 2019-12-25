@@ -23,7 +23,7 @@ https://github.com/FastFilter/FilterPassword
 
 We are assuming that your set is made of 64-bit integers. If you have strings
 or other data structures, you need to hash them first to a 64-bit integer. It
-is not important to have a good hash function, but collision should be unlikely
+is not important to have a good hash function, but collisions should be unlikely
 (~1/2^64).
 
 You can use either the xor8 filter... (false-positive rate of about 0.3 %)
