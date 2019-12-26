@@ -209,3 +209,4 @@ It took 19.373102 seconds to build an index over 100000000 values.
 * Rust: [1](https://github.com/bnclabs/xorfilter) and [2](https://github.com/codri/xorfilter-rs)
 * [C++](https://github.com/FastFilter/fastfilter_cpp)
 * [Java](https://github.com/FastFilter/fastfilter_java)
+* [Python](https://github.com/GreyDireWolf/pyxorfilter)
