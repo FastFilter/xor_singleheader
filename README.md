@@ -210,3 +210,4 @@ It took 19.373102 seconds to build an index over 100000000 values.
 * [C++](https://github.com/FastFilter/fastfilter_cpp)
 * [Java](https://github.com/FastFilter/fastfilter_java)
 * [Python](https://github.com/GreyDireWolf/pyxorfilter)
+* [C99](https://github.com/skeeto/xf8)
