@@ -8,6 +8,13 @@
 #include <string.h>
 
 /**
+ * Dietzfelbinger & Walzer's fuse filters,
+ * described in "Dense Peelable Random Uniform Hypergraphs",
+ * https://arxiv.org/abs/1907.04749, can accomodate fill factors up to
+ * 87.9% full, rather than 1 / 1.23 = 81.3%. In the 8-bit case,
+ * This reduces the memory usage from 9.84 bits per entry to 9.1 bits.
+ */
+/**
  * We assume that you have a large set of 64-bit integers
  * and you want a data structure to do membership tests using
  * no more than ~8 or ~16 bits per key. If your initial set
