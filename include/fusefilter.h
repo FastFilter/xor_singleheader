@@ -7,6 +7,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef XOR_MAX_ITERATIONS
+#define XOR_MAX_ITERATIONS 100 // probabillity of success should always be > 0.5 so 100 iterations is highly unlikely
+#endif 
+
 /**
  * Dietzfelbinger & Walzer's fuse filters,
  * described in "Dense Peelable Random Uniform Hypergraphs",
@@ -195,6 +199,9 @@ struct fuse_setbuffer_s {
 // size is the number of keys
 // The caller is responsable for calling fuse8_allocate(size,filter) before.
 // The caller is responsible to ensure that there are no duplicated keys.
+// The inner loop will run up to XOR_MAX_ITERATIONS times (default on 100),
+// it should never fail, except if there are duplicated keys. If it fails,
+// a return value of false is provided.
 //
 bool fuse8_populate(const uint64_t *keys, uint32_t size, fuse8_t *filter) {
   uint64_t rng_counter = 1;
@@ -218,7 +225,15 @@ bool fuse8_populate(const uint64_t *keys, uint32_t size, fuse8_t *filter) {
   }
 
   for (int loop = 0; true; ++loop) {
-    // if (loop > 0 && 0 == (loop & (loop - 1))) fprintf(stderr, "loop %d\n", loop);
+    if(loop + 1 > XOR_MAX_ITERATIONS) {
+      fprintf(stderr, "Too many iterations. Are all your keys unique?");
+      free(sets);
+      free(Q);
+      free(stack);
+      return false;
+    }
+
+
     memset(sets, 0, sizeof(fuse_fuseset_t) * arrayLength);
     for (size_t i = 0; i < size; i++) {
       uint64_t key = keys[i];

@@ -7,6 +7,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef XOR_MAX_ITERATIONS
+#define XOR_MAX_ITERATIONS 100 // probabillity of success should always be > 0.5 so 100 iterations is highly unlikely
+#endif 
+
 /**
  * We assume that you have a large set of 64-bit integers
  * and you want a data structure to do membership tests using
@@ -436,6 +440,9 @@ static inline uint32_t xor_flushone_decrement_buffer(xor_setbuffer_t *buffer,
 // size is the number of keys
 // The caller is responsible for calling xor8_allocate(size,filter) before.
 // The caller is responsible to ensure that there are no duplicated keys.
+// The inner loop will run up to XOR_MAX_ITERATIONS times (default on 100),
+// it should never fail, except if there are duplicated keys. If it fails,
+// a return value of false is provided.
 //
 bool xor8_buffered_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
   uint64_t rng_counter = 1;
@@ -469,13 +476,28 @@ bool xor8_buffered_populate(const uint64_t *keys, uint32_t size, xor8_t *filter)
       (xor_keyindex_t *)malloc(size * sizeof(xor_keyindex_t));
 
   if ((sets == NULL) || (Q == NULL) || (stack == NULL)) {
+    xor_free_buffer(&buffer0);
+    xor_free_buffer(&buffer1);
+    xor_free_buffer(&buffer2);
     free(sets);
     free(Q);
     free(stack);
     return false;
   }
+  int iterations = 0;
 
   while (true) {
+    iterations ++;
+    if(iterations > XOR_MAX_ITERATIONS) {
+      fprintf(stderr, "Too many iterations. Are all your keys unique?");
+      xor_free_buffer(&buffer0);
+      xor_free_buffer(&buffer1);
+      xor_free_buffer(&buffer2);
+      free(sets);
+      free(Q);
+      free(stack);
+      return false;
+    }
     memset(sets, 0, sizeof(xor_xorset_t) * arrayLength);
     for (size_t i = 0; i < size; i++) {
       uint64_t key = keys[i];
@@ -628,6 +650,9 @@ bool xor8_buffered_populate(const uint64_t *keys, uint32_t size, xor8_t *filter)
 // size is the number of keys
 // The caller is responsable for calling xor8_allocate(size,filter) before.
 // The caller is responsible to ensure that there are no duplicated keys.
+// The inner loop will run up to XOR_MAX_ITERATIONS times (default on 100),
+// it should never fail, except if there are duplicated keys. If it fails,
+// a return value of false is provided.
 //
 bool xor8_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
   uint64_t rng_counter = 1;
@@ -656,8 +681,18 @@ bool xor8_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
     free(stack);
     return false;
   }
+  int iterations = 0;
 
   while (true) {
+    iterations ++;
+    if(iterations > XOR_MAX_ITERATIONS) {
+      fprintf(stderr, "Too many iterations. Are all your keys unique?");
+      free(sets);
+      free(Q);
+      free(stack);
+      return false;
+    }
+
     memset(sets, 0, sizeof(xor_xorset_t) * arrayLength);
     for (size_t i = 0; i < size; i++) {
       uint64_t key = keys[i];
@@ -821,6 +856,9 @@ bool xor8_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
 // size is the number of keys
 // The caller is responsable for calling xor16_allocate(size,filter) before.
 // The caller is responsible to ensure that there are no duplicated keys.
+// The inner loop will run up to XOR_MAX_ITERATIONS times (default on 100),
+// it should never fail, except if there are duplicated keys. If it fails,
+// a return value of false is provided.
 //
 bool xor16_buffered_populate(const uint64_t *keys, uint32_t size, xor16_t *filter) {
   uint64_t rng_counter = 1;
@@ -854,13 +892,29 @@ bool xor16_buffered_populate(const uint64_t *keys, uint32_t size, xor16_t *filte
       (xor_keyindex_t *)malloc(size * sizeof(xor_keyindex_t));
 
   if ((sets == NULL) || (Q == NULL) || (stack == NULL)) {
+    xor_free_buffer(&buffer0);
+    xor_free_buffer(&buffer1);
+    xor_free_buffer(&buffer2);
     free(sets);
     free(Q);
     free(stack);
     return false;
   }
+  int iterations = 0;
 
   while (true) {
+    iterations ++;
+    if(iterations > XOR_MAX_ITERATIONS) {
+      fprintf(stderr, "Too many iterations. Are all your keys unique?");
+      xor_free_buffer(&buffer0);
+      xor_free_buffer(&buffer1);
+      xor_free_buffer(&buffer2);
+      free(sets);
+      free(Q);
+      free(stack);
+      return false;
+    }
+
     memset(sets, 0, sizeof(xor_xorset_t) * arrayLength);
     for (size_t i = 0; i < size; i++) {
       uint64_t key = keys[i];
@@ -1015,6 +1069,9 @@ bool xor16_buffered_populate(const uint64_t *keys, uint32_t size, xor16_t *filte
 // size is the number of keys
 // The caller is responsable for calling xor16_allocate(size,filter) before.
 // The caller is responsible to ensure that there are no duplicated keys.
+// The inner loop will run up to XOR_MAX_ITERATIONS times (default on 100),
+// it should never fail, except if there are duplicated keys. If it fails,
+// a return value of false is provided.
 //
 bool xor16_populate(const uint64_t *keys, uint32_t size, xor16_t *filter) {
   uint64_t rng_counter = 1;
@@ -1043,8 +1100,18 @@ bool xor16_populate(const uint64_t *keys, uint32_t size, xor16_t *filter) {
     free(stack);
     return false;
   }
+  int iterations = 0;
 
   while (true) {
+    iterations ++;
+    if(iterations > XOR_MAX_ITERATIONS) {
+      fprintf(stderr, "Too many iterations. Are all your keys unique?");
+      free(sets);
+      free(Q);
+      free(stack);
+      return false;
+    }
+
     memset(sets, 0, sizeof(xor_xorset_t) * arrayLength);
     for (size_t i = 0; i < size; i++) {
       uint64_t key = keys[i];

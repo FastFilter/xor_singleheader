@@ -32,7 +32,10 @@ You can use either the xor8 filter... (false-positive rate of about 0.3 %)
 uint64_t *big_set = ...
 xor8_t filter;
 xor8_allocate(size, &filter);
-xor8_populate(big_set, size, &filter);
+bool is_ok = xor8_populate(big_set, size, &filter);
+if(! is_ok ) {
+    // do something (you have duplicated keys)
+}
 xor8_contain(big_set[0], &filter); // will be true
 xor8_contain(somerandomvalue, &filter); // will be false with high probability
 
@@ -41,7 +44,7 @@ xor8_free(&filter);
 
 If the data is sizeable (e.g., 100,000,000 keys) and you have enough memory, you may want to replace  `xor8_populate` by `xor8_buffered_populate` for greater speed during construction.
 
-You should ensure that you have no duplicated keys.
+You should ensure that you have no duplicated keys. If there are duplicated values, the `xor8_populate` function will return `false`.
 
 Or the xor16 filter (larger but more accurate)... (vanishingly small false-positive rate)
 
@@ -49,7 +52,10 @@ Or the xor16 filter (larger but more accurate)... (vanishingly small false-posit
 uint64_t *big_set = ...
 xor16_t filter;
 xor16_allocate(size, &filter);
-xor16_populate(big_set, size, &filter);
+bool is_ok = xor16_populate(big_set, size, &filter);
+if(! is_ok ) {
+    // do something (you have duplicated keys)
+}
 xor16_contain(big_set[0], &filter); // will be true
 xor16_contain(somerandomvalue, &filter); // will be false with high probability
 
@@ -76,6 +82,8 @@ public:
     ~XorSingle() {
         xor8_free(&filter);
     }
+
+    // if it returns true, check for duplicate keys in data
     bool AddAll(const uint64_t* data, const size_t start, const size_t end) {
         return xor8_buffered_populate(data + start, end - start, &filter);
     }
@@ -123,7 +131,10 @@ So, for example, you might be able to build an serialize the filter as follows:
 ```C
     xor8_t filter;
     xor8_allocate(array_size, &filter);
-    xor8_buffered_populate(array, array_size, &filter);
+    bool is_ok = xor8_buffered_populate(array, array_size, &filter);
+    if( ! is_ok ) {
+        // do something, like remove duplicates from array
+    }
 
     
     uint64_t seed = filter.seed;
