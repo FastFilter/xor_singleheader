@@ -277,8 +277,6 @@ static inline bool xor_init_buffer(xor_setbuffer_t *buffer, size_t size) {
   if ((buffer->counts == NULL) || (buffer->buffer == NULL)) {
     free(buffer->counts);
     free(buffer->buffer);
-    buffer->counts = NULL;
-    buffer->buffer = NULL;
     return false;
   }
   memset(buffer->counts, 0, buffer->slotcount * sizeof(uint32_t));
