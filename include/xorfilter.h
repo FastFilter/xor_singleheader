@@ -197,18 +197,6 @@ struct xor_h0h1h2_s {
 
 typedef struct xor_h0h1h2_s xor_h0h1h2_t;
 
-static inline xor_h0h1h2_t xor8_get_just_h0_h1_h2(uint64_t hash,
-                                                  const xor8_t *filter) {
-  xor_h0h1h2_t answer;
-  uint32_t r0 = (uint32_t)hash;
-  uint32_t r1 = (uint32_t)xor_rotl64(hash, 21);
-  uint32_t r2 = (uint32_t)xor_rotl64(hash, 42);
-
-  answer.h0 = xor_reduce(r0, filter->blockLength);
-  answer.h1 = xor_reduce(r1, filter->blockLength);
-  answer.h2 = xor_reduce(r2, filter->blockLength);
-  return answer;
-}
 static inline uint32_t xor8_get_h0(uint64_t hash, const xor8_t *filter) {
   uint32_t r0 = (uint32_t)hash;
   return xor_reduce(r0, filter->blockLength);
@@ -461,14 +449,9 @@ bool xor8_buffered_populate(const uint64_t *keys, uint32_t size, xor8_t *filter)
   xor_xorset_t *sets =
       (xor_xorset_t *)malloc(arrayLength * sizeof(xor_xorset_t));
   xor_xorset_t *sets0 = sets;
-  xor_xorset_t *sets1 = sets + blockLength;
-  xor_xorset_t *sets2 = sets + 2 * blockLength;
 
   xor_keyindex_t *Q =
       (xor_keyindex_t *)malloc(arrayLength * sizeof(xor_keyindex_t));
-  xor_keyindex_t *Q0 = Q;
-  xor_keyindex_t *Q1 = Q + blockLength;
-  xor_keyindex_t *Q2 = Q + 2 * blockLength;
 
   xor_keyindex_t *stack =
       (xor_keyindex_t *)malloc(size * sizeof(xor_keyindex_t));
@@ -482,6 +465,12 @@ bool xor8_buffered_populate(const uint64_t *keys, uint32_t size, xor8_t *filter)
     free(stack);
     return false;
   }
+  xor_xorset_t *sets1 = sets + blockLength;
+  xor_xorset_t *sets2 = sets + 2 * blockLength;
+  xor_keyindex_t *Q0 = Q;
+  xor_keyindex_t *Q1 = Q + blockLength;
+  xor_keyindex_t *Q2 = Q + 2 * blockLength;
+
   int iterations = 0;
 
   while (true) {
@@ -660,15 +649,9 @@ bool xor8_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
 
   xor_xorset_t *sets =
       (xor_xorset_t *)malloc(arrayLength * sizeof(xor_xorset_t));
-  xor_xorset_t *sets0 = sets;
-  xor_xorset_t *sets1 = sets + blockLength;
-  xor_xorset_t *sets2 = sets + 2 * blockLength;
 
   xor_keyindex_t *Q =
       (xor_keyindex_t *)malloc(arrayLength * sizeof(xor_keyindex_t));
-  xor_keyindex_t *Q0 = Q;
-  xor_keyindex_t *Q1 = Q + blockLength;
-  xor_keyindex_t *Q2 = Q + 2 * blockLength;
 
   xor_keyindex_t *stack =
       (xor_keyindex_t *)malloc(size * sizeof(xor_keyindex_t));
@@ -679,6 +662,13 @@ bool xor8_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
     free(stack);
     return false;
   }
+  xor_xorset_t *sets0 = sets;
+  xor_xorset_t *sets1 = sets + blockLength;
+  xor_xorset_t *sets2 = sets + 2 * blockLength;
+  xor_keyindex_t *Q0 = Q;
+  xor_keyindex_t *Q1 = Q + blockLength;
+  xor_keyindex_t *Q2 = Q + 2 * blockLength;
+
   int iterations = 0;
 
   while (true) {
@@ -876,15 +866,9 @@ bool xor16_buffered_populate(const uint64_t *keys, uint32_t size, xor16_t *filte
 
   xor_xorset_t *sets =
       (xor_xorset_t *)malloc(arrayLength * sizeof(xor_xorset_t));
-  xor_xorset_t *sets0 = sets;
-  xor_xorset_t *sets1 = sets + blockLength;
-  xor_xorset_t *sets2 = sets + 2 * blockLength;
 
   xor_keyindex_t *Q =
       (xor_keyindex_t *)malloc(arrayLength * sizeof(xor_keyindex_t));
-  xor_keyindex_t *Q0 = Q;
-  xor_keyindex_t *Q1 = Q + blockLength;
-  xor_keyindex_t *Q2 = Q + 2 * blockLength;
 
   xor_keyindex_t *stack =
       (xor_keyindex_t *)malloc(size * sizeof(xor_keyindex_t));
@@ -898,6 +882,13 @@ bool xor16_buffered_populate(const uint64_t *keys, uint32_t size, xor16_t *filte
     free(stack);
     return false;
   }
+  xor_xorset_t *sets0 = sets;
+  xor_xorset_t *sets1 = sets + blockLength;
+  xor_xorset_t *sets2 = sets + 2 * blockLength;
+  xor_keyindex_t *Q0 = Q;
+  xor_keyindex_t *Q1 = Q + blockLength;
+  xor_keyindex_t *Q2 = Q + 2 * blockLength;
+
   int iterations = 0;
 
   while (true) {
@@ -1079,15 +1070,9 @@ bool xor16_populate(const uint64_t *keys, uint32_t size, xor16_t *filter) {
 
   xor_xorset_t *sets =
       (xor_xorset_t *)malloc(arrayLength * sizeof(xor_xorset_t));
-  xor_xorset_t *sets0 = sets;
-  xor_xorset_t *sets1 = sets + blockLength;
-  xor_xorset_t *sets2 = sets + 2 * blockLength;
 
   xor_keyindex_t *Q =
       (xor_keyindex_t *)malloc(arrayLength * sizeof(xor_keyindex_t));
-  xor_keyindex_t *Q0 = Q;
-  xor_keyindex_t *Q1 = Q + blockLength;
-  xor_keyindex_t *Q2 = Q + 2 * blockLength;
 
   xor_keyindex_t *stack =
       (xor_keyindex_t *)malloc(size * sizeof(xor_keyindex_t));
@@ -1098,6 +1083,14 @@ bool xor16_populate(const uint64_t *keys, uint32_t size, xor16_t *filter) {
     free(stack);
     return false;
   }
+  xor_xorset_t *sets0 = sets;
+  xor_xorset_t *sets1 = sets + blockLength;
+  xor_xorset_t *sets2 = sets + 2 * blockLength;
+
+  xor_keyindex_t *Q0 = Q;
+  xor_keyindex_t *Q1 = Q + blockLength;
+  xor_keyindex_t *Q2 = Q + 2 * blockLength;
+
   int iterations = 0;
 
   while (true) {
