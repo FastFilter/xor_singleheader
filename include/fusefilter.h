@@ -79,7 +79,7 @@ typedef struct fuse8_s {
   uint64_t seed;
   uint64_t segmentLength; // = slotCount  / FUSE_SLOTS
   uint8_t
-      *fingerprints; // after fuse8_allocate, will point to 3*blockLength values
+      *fingerprints; // after fuse8_allocate, will point to 3*segmentLength values
 } fuse8_t;
 
 // Report if the key is in the set, with false positive rate.
