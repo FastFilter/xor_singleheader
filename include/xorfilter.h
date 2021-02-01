@@ -124,7 +124,6 @@ static inline bool xor8_allocate(uint32_t size, xor8_t *filter) {
 // caller is responsible to call xor8_free(filter)
 static inline bool xor16_allocate(uint32_t size, xor16_t *filter) {
   size_t capacity = 32 + 1.23 * size;
-  filter->blockLength = capacity / 3;
   capacity = capacity / 3 * 3;
   filter->fingerprints = (uint16_t *)malloc(capacity * sizeof(uint16_t));
   if (filter->fingerprints != NULL) {
