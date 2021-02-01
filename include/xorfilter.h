@@ -121,7 +121,7 @@ static inline bool xor8_allocate(uint32_t size, xor8_t *filter) {
 }
 
 // allocate enough capacity for a set containing up to 'size' elements
-// caller is responsible to call xor8_free(filter)
+// caller is responsible to call xor16_free(filter)
 static inline bool xor16_allocate(uint32_t size, xor16_t *filter) {
   size_t capacity = 32 + 1.23 * size;
   filter->blockLength = capacity / 3;
