@@ -184,15 +184,6 @@ struct fuse_keyindex_s {
 
 typedef struct fuse_keyindex_s fuse_keyindex_t;
 
-struct fuse_setbuffer_s {
-  fuse_keyindex_t *buffer;
-  uint32_t *counts;
-  int insignificantbits;
-  uint32_t slotsize; // should be 1<< insignificantbits
-  uint32_t slotcount;
-  size_t originalsize;
-};
-
 //
 // construct the filter, returns true on success, false on failure.
 // most likely, a failure is due to too high a memory usage
