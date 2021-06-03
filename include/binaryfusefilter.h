@@ -88,7 +88,7 @@ static inline binary_hashes_t binary_fuse_hash_batch(uint64_t hash,
 }
 static inline uint32_t binary_fuse_hash(int index, uint64_t hash,
                                         const binary_fuse8_t *filter) {
-    uint64_t h = binary_fuse_mulhi(hash, filter->SegmentCountLength);//(uint64_t)(x >> 64);
+    uint64_t h = binary_fuse_mulhi(hash, filter->SegmentCountLength);
     h += index * filter->SegmentLength;
     // keep the lower 36 bits
     uint64_t hh = hash & ((1UL << 36) - 1);
