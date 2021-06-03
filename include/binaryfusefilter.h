@@ -7,7 +7,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #ifndef XOR_MAX_ITERATIONS
 #define XOR_MAX_ITERATIONS                                                     \
   100 // probabillity of success should always be > 0.5 so 100 iterations is
@@ -112,11 +111,13 @@ static inline bool binary_fuse8_contain(uint64_t key,
 
 static inline uint32_t binary_fuse8_calculate_segment_length(uint32_t arity,
                                                              uint32_t size) {
+  // These parameters are very sensitive. Replacing 'floor' by 'round' can
+  // substantially affect the construction time. 
   if (arity == 3) {
-    return ((uint32_t)2) << (int)(round(0.831 * log((double)(size)) + 0.75 +
+    return ((uint32_t)2) << (int)(floor(0.831 * log((double)(size)) + 0.75 +
                                         0.5));
   } else if (arity == 4) {
-    return ((uint32_t)1) << (int)(round(0.936 * log((double)(size)) - 1 + 0.5));
+    return ((uint32_t)1) << (int)(floor(0.936 * log((double)(size)) - 1 + 0.5));
   } else {
     return 65536;
   }
@@ -202,7 +203,7 @@ static inline uint8_t binary_fuse8_mod3(uint8_t x) {
 //
 bool binary_fuse8_populate(const uint64_t *keys, uint32_t size,
                            binary_fuse8_t *filter) {
-  uint64_t rng_counter = 1;
+  uint64_t rng_counter = 0x726b2b9d438b9d4d;
   filter->Seed = binary_fuse_rng_splitmix64(&rng_counter);
   uint64_t *reverseOrder = (uint64_t *)calloc((size + 1), sizeof(uint64_t));
   uint32_t capacity = filter->ArrayLength;
@@ -217,7 +218,7 @@ bool binary_fuse8_populate(const uint64_t *keys, uint32_t size,
   }
   uint32_t block = ((uint32_t)1 << blockBits);
   uint32_t *startPos = (uint32_t *)malloc((1 << blockBits) * sizeof(uint32_t));
-  uint32_t h012[3];
+  uint32_t h012[5];
 
   if ((alone == NULL) || (t2count == NULL) || (reverseH == NULL) ||
       (t2hash == NULL) || (reverseOrder == NULL) || (startPos == NULL)) {
@@ -241,6 +242,7 @@ bool binary_fuse8_populate(const uint64_t *keys, uint32_t size,
       free(startPos);
       return false;
     }
+
     for (uint32_t i = 0; i < block; i++) {
       // important : i * size would overflow as a 32-bit number in some
       // cases.
@@ -258,6 +260,7 @@ bool binary_fuse8_populate(const uint64_t *keys, uint32_t size,
       reverseOrder[startPos[segment_index]] = hash;
       startPos[segment_index]++;
     }
+    int error = 0;
     for (uint32_t i = 0; i < size; i++) {
       uint64_t hash = reverseOrder[i];
       uint32_t h0 = binary_fuse_hash(0, hash, filter);
@@ -271,12 +274,12 @@ bool binary_fuse8_populate(const uint64_t *keys, uint32_t size,
       t2count[h2] += 4;
       t2hash[h2] ^= hash;
       t2count[h2] ^= 2;
-
-     if ((t2count[h0] < 4) || (t2count[h1] < 4) ||
-          (t2count[h2] < 4)) {
-        break;
-      }
+      error = (t2count[h0] < 4) ? 1 : error;
+      error = (t2count[h1] < 4) ? 1 : error;
+      error = (t2count[h2] < 4) ? 1 : error;
     }
+    if(error) { continue; }
+
     // End of key addition
     uint32_t Qsize = 0;
     // Add sets with one key to the queue.
@@ -290,16 +293,17 @@ bool binary_fuse8_populate(const uint64_t *keys, uint32_t size,
       uint32_t index = alone[Qsize];
       if ((t2count[index] >> 2) == 1) {
         uint64_t hash = t2hash[index];
+
+        //h012[0] = binary_fuse_hash(0, hash, filter);
+        h012[1] = binary_fuse_hash(1, hash, filter);
+        h012[2] = binary_fuse_hash(2, hash, filter);
+        h012[3] = binary_fuse_hash(0, hash, filter); // == h012[0];
+        h012[4] = h012[1];
         uint8_t found = t2count[index] & 3;
         reverseH[stacksize] = found;
         reverseOrder[stacksize] = hash;
         stacksize++;
-
-        h012[0] = binary_fuse_hash(0, hash, filter);
-        h012[1] = binary_fuse_hash(1, hash, filter);
-        h012[2] = binary_fuse_hash(2, hash, filter);
-
-        uint32_t other_index1 = h012[binary_fuse8_mod3(found + 1)];
+        uint32_t other_index1 = h012[found + 1];
         alone[Qsize] = other_index1;
         Qsize += ((t2count[other_index1] >> 2) == 2 ? 1 : 0);
 
@@ -307,7 +311,7 @@ bool binary_fuse8_populate(const uint64_t *keys, uint32_t size,
         t2count[other_index1] ^= binary_fuse8_mod3(found + 1); 
         t2hash[other_index1] ^= hash;
 
-        uint32_t other_index2 = h012[binary_fuse8_mod3(found + 2)];
+        uint32_t other_index2 = h012[found + 2];
         alone[Qsize] = other_index2;
         Qsize += ((t2count[other_index2] >> 2) == 2 ? 1 : 0);
         t2count[other_index2] -= 4;
@@ -324,6 +328,7 @@ bool binary_fuse8_populate(const uint64_t *keys, uint32_t size,
     memset(t2hash, 0, sizeof(uint64_t[capacity]));
     filter->Seed = binary_fuse_rng_splitmix64(&rng_counter);
   }
+
   for (uint32_t i = size - 1; i < size; i--) {
     // the hash of the key we insert next
     uint64_t hash = reverseOrder[i];
@@ -332,9 +337,11 @@ bool binary_fuse8_populate(const uint64_t *keys, uint32_t size,
     h012[0] = binary_fuse_hash(0, hash, filter);
     h012[1] = binary_fuse_hash(1, hash, filter);
     h012[2] = binary_fuse_hash(2, hash, filter);
-    filter->Fingerprints[h012[binary_fuse8_mod3(found)]] = xor2 ^
-                                        filter->Fingerprints[h012[binary_fuse8_mod3(found + 1)]] ^
-                                        filter->Fingerprints[h012[binary_fuse8_mod3(found + 2)]];
+    h012[3] = h012[0];
+    h012[4] = h012[1];
+    filter->Fingerprints[h012[found]] = xor2 ^
+                                        filter->Fingerprints[h012[found + 1]] ^
+                                        filter->Fingerprints[h012[found + 2]];
   }
   free(alone);
   free(t2count);
