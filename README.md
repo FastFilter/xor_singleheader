@@ -1,4 +1,4 @@
-## Header-only Xor Filter library
+## Header-only Xor and Binary Fuse Filter library
 [![Build Status](https://travis-ci.org/FastFilter/xor_singleheader.svg?branch=master)](https://travis-ci.org/FastFilter/xor_singleheader)
 
 Bloom filters are used to quickly check whether an element is part of a set.
