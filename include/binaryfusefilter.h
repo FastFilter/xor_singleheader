@@ -132,7 +132,7 @@ double binary_fuse8_max(double a, double b) {
 static inline double binary_fuse8_calculate_size_factor(uint32_t arity,
                                                         uint32_t size) {
   if (arity == 3) {
-    return binary_fuse8_max(1.125, 0.4 + 9.3 / log((double)size));
+    return binary_fuse8_max(1.125, 0.125 + log((double)1000000) / log((double)size));
   } else if (arity == 4) {
     return binary_fuse8_max(1.075, 0.77 + 4.06 / log((double)size));
   } else {
