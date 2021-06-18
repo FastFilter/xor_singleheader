@@ -113,10 +113,9 @@ static inline uint32_t binary_fuse8_calculate_segment_length(uint32_t arity,
   // These parameters are very sensitive. Replacing 'floor' by 'round' can
   // substantially affect the construction time. 
   if (arity == 3) {
-    return ((uint32_t)2) << (int)(floor(0.831 * log((double)(size)) + 0.75 +
-                                        0.5));
+    return ((uint32_t)1) << (int)(floor(log((double)(size)) / log(3.33) + 2.25));
   } else if (arity == 4) {
-    return ((uint32_t)1) << (int)(floor(0.936 * log((double)(size)) - 1 + 0.5));
+    return ((uint32_t)1) << (int)(floor(log((double)(size)) / log(2.91) - 0.5));
   } else {
     return 65536;
   }
@@ -132,9 +131,9 @@ double binary_fuse8_max(double a, double b) {
 static inline double binary_fuse8_calculate_size_factor(uint32_t arity,
                                                         uint32_t size) {
   if (arity == 3) {
-    return binary_fuse8_max(1.125, 0.125 + log((double)1000000) / log((double)size));
+    return binary_fuse8_max(1.125, 0.875 + 0.25 * log(1000000.0) / log((double)size));
   } else if (arity == 4) {
-    return binary_fuse8_max(1.075, 0.77 + 4.06 / log((double)size));
+    return binary_fuse8_max(1.075, 0.77 + 0.305 * log(600000.0) / log((double)size));
   } else {
     return 2.0;
   }

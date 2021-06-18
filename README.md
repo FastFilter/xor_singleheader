@@ -11,10 +11,10 @@ They are also smaller than cuckoo filters.
 
 <img src="figures/comparison.png" width="50%"/>
 
-This is a simple C header-only library for Xor filters. It implements both  binary fuse and xor filters.
+This is a simple C header-only library. It implements both  binary fuse and xor filters.
 
 
-To use the state-of-the-art binary fuse filters, simply add the `binaryfusefilter.h` file to your project.  It is made available under the business-friendly Apache license.
+To use the state-of-the-art binary fuse filters, simply add (for example) the `binaryfusefilter.h` file to your project.  It is made available under the business-friendly Apache license.
 
 
 For a simple application built on this library, see 
@@ -115,12 +115,6 @@ testing binary fuse8
  bits per entry 7.99 (theoretical lower bound)
  efficiency ratio 1.131 
 
-testing fuse8
- fpp 0.00393 (estimated) 
- bits per entry 9.10
- bits per entry 7.99 (theoretical lower bound)
- efficiency ratio 1.139 
-
 testing buffered xor8
  fpp 0.00391 (estimated) 
  bits per entry 9.88
@@ -157,13 +151,7 @@ It took 0.358196 seconds to build an index over 10000000 values.
 It took 0.355775 seconds to build an index over 10000000 values. 
 It took 0.367437 seconds to build an index over 10000000 values. 
 It took 0.358578 seconds to build an index over 10000000 values. 
-It took 0.358220 seconds to build an index over 10000000 values. 
-testing fuse8 size = 10000000 
-It took 0.910717 seconds to build an index over 10000000 values. 
-It took 0.951819 seconds to build an index over 10000000 values. 
-It took 0.914940 seconds to build an index over 10000000 values. 
-It took 0.900965 seconds to build an index over 10000000 values. 
-It took 0.901591 seconds to build an index over 10000000 values. 
+It took 0.358220 seconds to build an index over 10000000 values.  
 testing buffered xor8 size = 10000000 
 It took 0.669461 seconds to build an index over 10000000 values. 
 It took 0.670573 seconds to build an index over 10000000 values. 
