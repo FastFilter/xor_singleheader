@@ -430,6 +430,7 @@ static inline uint32_t xor_flushone_decrement_buffer(xor_setbuffer_t *buffer,
 // a return value of false is provided.
 //
 bool xor8_buffered_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
+  if(size == 0) { return false; }
   uint64_t rng_counter = 1;
   filter->seed = xor_rng_splitmix64(&rng_counter);
   size_t arrayLength = filter->blockLength * 3; // size of the backing array
@@ -641,6 +642,7 @@ bool xor8_buffered_populate(const uint64_t *keys, uint32_t size, xor8_t *filter)
 // a return value of false is provided.
 //
 bool xor8_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
+  if(size == 0) { return false; }
   uint64_t rng_counter = 1;
   filter->seed = xor_rng_splitmix64(&rng_counter);
   size_t arrayLength = filter->blockLength * 3; // size of the backing array
@@ -848,6 +850,7 @@ bool xor8_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
 // a return value of false is provided.
 //
 bool xor16_buffered_populate(const uint64_t *keys, uint32_t size, xor16_t *filter) {
+  if(size == 0) { return false; }
   uint64_t rng_counter = 1;
   filter->seed = xor_rng_splitmix64(&rng_counter);
   size_t arrayLength = filter->blockLength * 3; // size of the backing array
@@ -1062,6 +1065,7 @@ bool xor16_buffered_populate(const uint64_t *keys, uint32_t size, xor16_t *filte
 // a return value of false is provided.
 //
 bool xor16_populate(const uint64_t *keys, uint32_t size, xor16_t *filter) {
+  if(size == 0) { return false; }
   uint64_t rng_counter = 1;
   filter->seed = xor_rng_splitmix64(&rng_counter);
   size_t arrayLength = filter->blockLength * 3; // size of the backing array
