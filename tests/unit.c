@@ -165,7 +165,6 @@ bool testbufferedxor16(size_t size) {
 
 bool testbinaryfuse8(size_t size) {
   printf("testing binary fuse8\n");
-
   binary_fuse8_t filter;
   binary_fuse8_allocate(size, &filter);
   // we need some set of values
@@ -203,10 +202,53 @@ bool testbinaryfuse8(size_t size) {
   return true;
 }
 
+
+
+bool testbinaryfuse16(size_t size) {
+  printf("testing binary fuse16\n");
+  binary_fuse16_t filter;
+  binary_fuse16_allocate(size, &filter);
+  // we need some set of values
+  uint64_t *big_set = (uint64_t *)malloc(sizeof(uint64_t) * size);
+  for (size_t i = 0; i < size; i++) {
+    big_set[i] = i; // we use contiguous values
+  }
+  // we construct the filter
+  binary_fuse16_populate(big_set, size, &filter);
+  for (size_t i = 0; i < size; i++) {
+    if (!binary_fuse16_contain(big_set[i], &filter)) {
+      printf("bug!\n");
+      return false;
+    }
+  }
+
+  size_t random_matches = 0;
+  size_t trials = 10000000; //(uint64_t)rand() << 32 + rand()
+  for (size_t i = 0; i < trials; i++) {
+    uint64_t random_key = ((uint64_t)rand() << 32) + rand();
+    if (binary_fuse16_contain(random_key, &filter)) {
+      if (random_key >= size) {
+        random_matches++;
+      }
+    }
+  }
+  double fpp = random_matches * 1.0 / trials;
+  printf(" fpp %3.5f (estimated) \n", fpp);
+  double bpe = binary_fuse16_size_in_bytes(&filter) * 8.0 / size;
+  printf(" bits per entry %3.2f\n", bpe);
+  printf(" bits per entry %3.2f (theoretical lower bound)\n", - log(fpp)/log(2));
+  printf(" efficiency ratio %3.3f \n", bpe /(- log(fpp)/log(2)));
+  binary_fuse16_free(&filter);
+  free(big_set);
+  return true;
+}
+
 int main() {
   for(size_t size = 1000; size <= 1000000; size *= 10) {
     printf("== size = %zu \n", size);
     testbinaryfuse8(size);
+    printf("\n");
+    testbinaryfuse16(size);
     printf("\n");
     testbufferedxor8(size);
     printf("\n");

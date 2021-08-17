@@ -25,11 +25,17 @@ or other data structures, you need to hash them first to a 64-bit integer. It
 is not important to have a good hash function, but collisions should be unlikely
 (~1/2^64).
 
+The basic version works with 8-bit word and has a false-positive probability of
+1/256 (or 0.4%).
 
 ```C
 uint64_t *big_set = ...
 binary_fuse8_t filter;
-bool is_ok = binary_fuse8_allocate(big_set, size, &filter);
+bool is_ok = binary_fuse8_allocate(size, &filter);
+if(! is_ok ) {
+    // do something (you may have run out of memory)
+}
+is_ok = binary_fuse8_populate(big_set, size, &filter);
 if(! is_ok ) {
     // do something (you have duplicated keys)
 }
@@ -39,6 +45,11 @@ binary_fuse8_contain(somerandomvalue, &filter); // will be false with high proba
 binary_fuse8_free(&filter);
 ```
 
+We also have a 16-bit version which uses about twice the memory, 
+but has a far lower false-positive probability (256 times smaller):
+about 0.0015%. The type is `binary_fuse16_t` and you may use it with 
+functions such as `binary_fuse16_allocate`, `binary_fuse16_populate`,
+`binary_fuse8_contain` and `binary_fuse8_free`. 
 
 ## C++ wrapper 
 
@@ -81,8 +92,7 @@ private:
 
 ## Memory requirement
 
-The construction of a binary fuse filter is fast but it needs a fair amount of temporary memory: plan for about 24 bytes of memory per set entry. It is possible to construct a binary fuse filter with almost no
-temporary memory, but the construction is then somewhat slower.
+The construction of a binary fuse filter is fast but it needs a fair amount of temporary memory: plan for about 24 bytes of memory per set entry. It is possible to construct a binary fuse filter with almost no temporary memory, but the construction is then somewhat slower.
 
 ## Persistent usage
 
@@ -114,30 +124,7 @@ testing binary fuse8
  bits per entry 9.04
  bits per entry 7.99 (theoretical lower bound)
  efficiency ratio 1.131 
-
-testing buffered xor8
- fpp 0.00391 (estimated) 
- bits per entry 9.88
- bits per entry 8.00 (theoretical lower bound)
- efficiency ratio 1.235 
-
-testing buffered xor16
- fpp 0.00001 (estimated) 
- bits per entry 19.75
- bits per entry 16.11 (theoretical lower bound)
- efficiency ratio 1.225 
-
-testing xor8
- fpp 0.00391 (estimated) 
- bits per entry 9.88
- bits per entry 8.00 (theoretical lower bound)
- efficiency ratio 1.236 
-
-testing xor16
- fpp 0.00001 (estimated) 
- bits per entry 19.75
- bits per entry 16.17 (theoretical lower bound)
- efficiency ratio 1.222 
+....
 ```
 
 To run construction benchmarks:
@@ -152,30 +139,7 @@ It took 0.355775 seconds to build an index over 10000000 values.
 It took 0.367437 seconds to build an index over 10000000 values. 
 It took 0.358578 seconds to build an index over 10000000 values. 
 It took 0.358220 seconds to build an index over 10000000 values.  
-testing buffered xor8 size = 10000000 
-It took 0.669461 seconds to build an index over 10000000 values. 
-It took 0.670573 seconds to build an index over 10000000 values. 
-It took 0.656737 seconds to build an index over 10000000 values. 
-It took 0.655360 seconds to build an index over 10000000 values. 
-It took 0.661744 seconds to build an index over 10000000 values. 
-testing xor8 size = 10000000 
-It took 0.851166 seconds to build an index over 10000000 values. 
-It took 0.850426 seconds to build an index over 10000000 values. 
-It took 0.847820 seconds to build an index over 10000000 values. 
-It took 0.848532 seconds to build an index over 10000000 values. 
-It took 0.844814 seconds to build an index over 10000000 values. 
-testing buffered xor16 size = 10000000 
-It took 0.730542 seconds to build an index over 10000000 values. 
-It took 0.733887 seconds to build an index over 10000000 values. 
-It took 0.730195 seconds to build an index over 10000000 values. 
-It took 0.725559 seconds to build an index over 10000000 values. 
-It took 0.722558 seconds to build an index over 10000000 values. 
-testing xor16 size = 10000000 
-It took 0.913909 seconds to build an index over 10000000 values. 
-It took 0.913466 seconds to build an index over 10000000 values. 
-It took 0.910520 seconds to build an index over 10000000 values. 
-It took 0.918718 seconds to build an index over 10000000 values. 
-It took 0.923724 seconds to build an index over 10000000 values. 
+...
 ```
 
 ## Implementations of xor and binary fuse filters in other programmming languages
