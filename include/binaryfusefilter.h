@@ -141,8 +141,10 @@ static inline double binary_fuse_calculate_size_factor(uint32_t arity,
 
 // allocate enough capacity for a set containing up to 'size' elements
 // caller is responsible to call binary_fuse8_free(filter)
+// size should be at least 2.
 static inline bool binary_fuse8_allocate(uint32_t size,
                                          binary_fuse8_t *filter) {
+  if(size <= 1) { return false; }
   uint32_t arity = 3;
   filter->SegmentLength = binary_fuse_calculate_segment_length(arity, size);
   if (filter->SegmentLength > 262144) {
@@ -405,8 +407,10 @@ static inline bool binary_fuse16_contain(uint64_t key,
 
 // allocate enough capacity for a set containing up to 'size' elements
 // caller is responsible to call binary_fuse16_free(filter)
+// size should be at least 2.
 static inline bool binary_fuse16_allocate(uint32_t size,
                                          binary_fuse16_t *filter) {
+  if(size <= 1) { return false; }
   uint32_t arity = 3;
   filter->SegmentLength = binary_fuse_calculate_segment_length(arity, size);
   if (filter->SegmentLength > 262144) {
