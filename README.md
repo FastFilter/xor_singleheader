@@ -147,7 +147,7 @@ It took 0.358220 seconds to build an index over 10000000 values.
 * [Go](https://github.com/FastFilter/xorfilter)
 * [Erlang](https://github.com/mpope9/exor_filter)
 * Rust: [1](https://github.com/bnclabs/xorfilter), [2](https://github.com/codri/xorfilter-rs), [3](https://github.com/Polochon-street/rustxorfilter)
-* [Zig](https://github.com/hexops/xorfilter)
+* [Zig](https://github.com/hexops/fastfilter)
 * [C++](https://github.com/FastFilter/fastfilter_cpp)
 * [Java](https://github.com/FastFilter/fastfilter_java)
 * [Python](https://github.com/GreyDireWolf/pyxorfilter)
