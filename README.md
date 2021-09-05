@@ -152,3 +152,4 @@ It took 0.358220 seconds to build an index over 10000000 values.
 * [Java](https://github.com/FastFilter/fastfilter_java)
 * [Python](https://github.com/GreyDireWolf/pyxorfilter)
 * [C99](https://github.com/skeeto/xf8)
+* [Julia](https://github.com/JokingHero/FastFilter.jl)
