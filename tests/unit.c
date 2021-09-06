@@ -354,4 +354,12 @@ int main() {
     printf("\n");
     printf("======\n");
   }
+
+  // test small edge-case binary fuse input sizes
+  testbinaryfuse8(0);
+  testbinaryfuse8(1);
+  testbinaryfuse8(2);
+  testbinaryfuse16(0);
+  testbinaryfuse16(1);
+  testbinaryfuse16(2);
 }
