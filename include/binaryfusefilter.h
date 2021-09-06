@@ -111,7 +111,7 @@ static inline bool binary_fuse8_contain(uint64_t key,
 static inline uint32_t binary_fuse_calculate_segment_length(uint32_t arity,
                                                              uint32_t size) {
   // These parameters are very sensitive. Replacing 'floor' by 'round' can
-  // substantially affect the construction time. 
+  // substantially affect the construction time.
   if (arity == 3) {
     return ((uint32_t)1) << (int)(floor(log((double)(size)) / log(3.33) + 2.25));
   } else if (arity == 4) {
@@ -196,9 +196,9 @@ static inline uint8_t binary_fuse_mod3(uint8_t x) {
 // most likely, a failure is due to too high a memory usage
 // size is the number of keys
 // The caller is responsable for calling binary_fuse8_allocate(size,filter)
-// before. The caller is responsible to ensure that there are no duplicated
+// before. The caller is responsible to ensure that there are not too many  duplicated
 // keys. The inner loop will run up to XOR_MAX_ITERATIONS times (default on
-// 100), it should never fail, except if there are duplicated keys. If it fails,
+// 100), it should never fail, except if there are many duplicated keys. If it fails,
 // a return value of false is provided.
 //
 bool binary_fuse8_populate(const uint64_t *keys, uint32_t size,
@@ -250,7 +250,7 @@ bool binary_fuse8_populate(const uint64_t *keys, uint32_t size,
       startPos[i] = ((uint64_t)i * size) >> blockBits;
     }
 
-    uint64_t maskblock = block - 1; 
+    uint64_t maskblock = block - 1;
     for (uint32_t i = 0; i < size; i++) {
       uint64_t hash = binary_fuse_murmur64(keys[i] + filter->Seed);
       uint64_t segment_index = hash >> (64 - blockBits);
@@ -262,6 +262,7 @@ bool binary_fuse8_populate(const uint64_t *keys, uint32_t size,
       startPos[segment_index]++;
     }
     int error = 0;
+    uint32_t duplicates = 0;
     for (uint32_t i = 0; i < size; i++) {
       uint64_t hash = reverseOrder[i];
       uint32_t h0 = binary_fuse8_hash(0, hash, filter);
@@ -275,6 +276,21 @@ bool binary_fuse8_populate(const uint64_t *keys, uint32_t size,
       t2count[h2] += 4;
       t2hash[h2] ^= hash;
       t2count[h2] ^= 2;
+      if ((t2hash[h0] & t2hash[h1] & t2hash[h2]) == 0) {
+        if   (((t2hash[h0] == 0) && (t2count[h0] == 8))
+          ||  ((t2hash[h1] == 0) && (t2count[h1] == 8))
+          ||  ((t2hash[h2] == 0) && (t2count[h2] == 8))) {
+					duplicates += 1;
+ 					t2count[h0] -= 4;
+ 					t2hash[h0] ^= hash;
+ 					t2count[h1] -= 4;
+ 					t2count[h1] ^= 1;
+ 					t2hash[h1] ^= hash;
+ 					t2count[h2] -= 4;
+ 					t2count[h2] ^= 2;
+ 					t2hash[h2] ^= hash;
+        }
+      }
       error = (t2count[h0] < 4) ? 1 : error;
       error = (t2count[h1] < 4) ? 1 : error;
       error = (t2count[h2] < 4) ? 1 : error;
@@ -309,7 +325,7 @@ bool binary_fuse8_populate(const uint64_t *keys, uint32_t size,
         Qsize += ((t2count[other_index1] >> 2) == 2 ? 1 : 0);
 
         t2count[other_index1] -= 4;
-        t2count[other_index1] ^= binary_fuse_mod3(found + 1); 
+        t2count[other_index1] ^= binary_fuse_mod3(found + 1);
         t2hash[other_index1] ^= hash;
 
         uint32_t other_index2 = h012[found + 2];
@@ -320,7 +336,7 @@ bool binary_fuse8_populate(const uint64_t *keys, uint32_t size,
         t2hash[other_index2] ^= hash;
       }
     }
-    if (stacksize == size) {
+    if (stacksize + duplicates == size) {
       // success
       break;
     }
@@ -459,9 +475,9 @@ static inline void binary_fuse16_free(binary_fuse16_t *filter) {
 // most likely, a failure is due to too high a memory usage
 // size is the number of keys
 // The caller is responsable for calling binary_fuse8_allocate(size,filter)
-// before. The caller is responsible to ensure that there are no duplicated
+// before. The caller is responsible to ensure that there are not too many duplicated
 // keys. The inner loop will run up to XOR_MAX_ITERATIONS times (default on
-// 100), it should never fail, except if there are duplicated keys. If it fails,
+// 100), it should never fail, except if there are many duplicated keys. If it fails,
 // a return value of false is provided.
 //
 bool binary_fuse16_populate(const uint64_t *keys, uint32_t size,
@@ -513,7 +529,7 @@ bool binary_fuse16_populate(const uint64_t *keys, uint32_t size,
       startPos[i] = ((uint64_t)i * size) >> blockBits;
     }
 
-    uint64_t maskblock = block - 1; 
+    uint64_t maskblock = block - 1;
     for (uint32_t i = 0; i < size; i++) {
       uint64_t hash = binary_fuse_murmur64(keys[i] + filter->Seed);
       uint64_t segment_index = hash >> (64 - blockBits);
@@ -525,6 +541,7 @@ bool binary_fuse16_populate(const uint64_t *keys, uint32_t size,
       startPos[segment_index]++;
     }
     int error = 0;
+    uint32_t duplicates = 0;
     for (uint32_t i = 0; i < size; i++) {
       uint64_t hash = reverseOrder[i];
       uint32_t h0 = binary_fuse16_hash(0, hash, filter);
@@ -538,6 +555,21 @@ bool binary_fuse16_populate(const uint64_t *keys, uint32_t size,
       t2count[h2] += 4;
       t2hash[h2] ^= hash;
       t2count[h2] ^= 2;
+      if ((t2hash[h0] & t2hash[h1] & t2hash[h2]) == 0) {
+        if   (((t2hash[h0] == 0) && (t2count[h0] == 8))
+          ||  ((t2hash[h1] == 0) && (t2count[h1] == 8))
+          ||  ((t2hash[h2] == 0) && (t2count[h2] == 8))) {
+					duplicates += 1;
+ 					t2count[h0] -= 4;
+ 					t2hash[h0] ^= hash;
+ 					t2count[h1] -= 4;
+ 					t2count[h1] ^= 1;
+ 					t2hash[h1] ^= hash;
+ 					t2count[h2] -= 4;
+ 					t2count[h2] ^= 2;
+ 					t2hash[h2] ^= hash;
+        }
+      }
       error = (t2count[h0] < 4) ? 1 : error;
       error = (t2count[h1] < 4) ? 1 : error;
       error = (t2count[h2] < 4) ? 1 : error;
@@ -572,7 +604,7 @@ bool binary_fuse16_populate(const uint64_t *keys, uint32_t size,
         Qsize += ((t2count[other_index1] >> 2) == 2 ? 1 : 0);
 
         t2count[other_index1] -= 4;
-        t2count[other_index1] ^= binary_fuse_mod3(found + 1); 
+        t2count[other_index1] ^= binary_fuse_mod3(found + 1);
         t2hash[other_index1] ^= hash;
 
         uint32_t other_index2 = h012[found + 2];
@@ -583,7 +615,7 @@ bool binary_fuse16_populate(const uint64_t *keys, uint32_t size,
         t2hash[other_index2] ^= hash;
       }
     }
-    if (stacksize == size) {
+    if (stacksize + duplicates == size) {
       // success
       break;
     }

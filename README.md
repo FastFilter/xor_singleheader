@@ -37,7 +37,7 @@ if(! is_ok ) {
 }
 is_ok = binary_fuse8_populate(big_set, size, &filter);
 if(! is_ok ) {
-    // do something (you have duplicated keys)
+    // do something (it should not fail in practice)
 }
 binary_fuse8_contain(big_set[0], &filter); // will be true
 binary_fuse8_contain(somerandomvalue, &filter); // will be false with high probability
@@ -62,14 +62,13 @@ class Xor8 {
 public:
     explicit BinaryFuse(const size_t size) {
         if (!binary_fuse8_allocate(size, &filter)) {
-            throw ::std::runtime_error("Allocation failed or you have duplicated keys");
+            throw ::std::runtime_error("Allocation failed.");
         }
     }
     ~BinaryFuse() {
         binary_fuse8_free(&filter);
     }
 
-    // if it returns true, check for duplicate keys in data
     bool AddAll(const uint64_t* data, const size_t start, const size_t end) {
         return xor8_buffered_populate(data + start, end - start, &filter);
     }
