@@ -202,7 +202,6 @@ static inline uint8_t binary_fuse_mod3(uint8_t x) {
 //
 bool binary_fuse8_populate(const uint64_t *keys, uint32_t size,
                            binary_fuse8_t *filter) {
-  if(size == 0) { return false; }
   uint64_t rng_counter = 0x726b2b9d438b9d4d;
   filter->Seed = binary_fuse_rng_splitmix64(&rng_counter);
   uint64_t *reverseOrder = (uint64_t *)calloc((size + 1), sizeof(uint64_t));
@@ -337,6 +336,7 @@ bool binary_fuse8_populate(const uint64_t *keys, uint32_t size,
     }
     if (stacksize + duplicates == size) {
       // success
+      size = stacksize;
       break;
     }
     memset(reverseOrder, 0, sizeof(uint64_t[size]));
@@ -480,7 +480,6 @@ static inline void binary_fuse16_free(binary_fuse16_t *filter) {
 //
 bool binary_fuse16_populate(const uint64_t *keys, uint32_t size,
                            binary_fuse16_t *filter) {
-  if(size == 0) { return false; }
   uint64_t rng_counter = 0x726b2b9d438b9d4d;
   filter->Seed = binary_fuse_rng_splitmix64(&rng_counter);
   uint64_t *reverseOrder = (uint64_t *)calloc((size + 1), sizeof(uint64_t));
@@ -615,6 +614,7 @@ bool binary_fuse16_populate(const uint64_t *keys, uint32_t size,
     }
     if (stacksize + duplicates == size) {
       // success
+      size = stacksize;
       break;
     }
     memset(reverseOrder, 0, sizeof(uint64_t[size]));

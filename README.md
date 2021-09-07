@@ -37,7 +37,7 @@ if(! is_ok ) {
 }
 is_ok = binary_fuse8_populate(big_set, size, &filter);
 if(! is_ok ) {
-    // do something (it should not fail in practice)
+    // do something (it should not fail in practice unless you have many duplicated hash values)
 }
 binary_fuse8_contain(big_set[0], &filter); // will be true
 binary_fuse8_contain(somerandomvalue, &filter); // will be false with high probability

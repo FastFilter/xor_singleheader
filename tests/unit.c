@@ -13,7 +13,7 @@ bool testbufferedxor8(size_t size) {
     big_set[i] = i; // we use contiguous values
   }
   // we construct the filter
-  xor8_buffered_populate(big_set, size, &filter);
+  if(!xor8_buffered_populate(big_set, size, &filter)) { return false; }
   for (size_t i = 0; i < size; i++) {
     if (!xor8_contain(big_set[i], &filter)) {
       printf("bug!\n");
@@ -22,7 +22,7 @@ bool testbufferedxor8(size_t size) {
   }
 
   size_t random_matches = 0;
-  size_t trials = 10000000; //(uint64_t)rand() << 32 + rand()
+  size_t trials = 10000000;
   for (size_t i = 0; i < trials; i++) {
     uint64_t random_key = ((uint64_t)rand() << 32) + rand();
     if (xor8_contain(random_key, &filter)) {
@@ -55,7 +55,7 @@ bool testxor8(size_t size) {
     big_set[i] = i; // we use contiguous values
   }
   // we construct the filter
-  xor8_populate(big_set, size, &filter);
+  if(!xor8_populate(big_set, size, &filter)) { return false; }
   for (size_t i = 0; i < size; i++) {
     if (!xor8_contain(big_set[i], &filter)) {
       printf("bug!\n");
@@ -64,7 +64,7 @@ bool testxor8(size_t size) {
   }
 
   size_t random_matches = 0;
-  size_t trials = 10000000; //(uint64_t)rand() << 32 + rand()
+  size_t trials = 10000000;
   for (size_t i = 0; i < trials; i++) {
     uint64_t random_key = ((uint64_t)rand() << 32) + rand();
     if (xor8_contain(random_key, &filter)) {
@@ -94,7 +94,7 @@ bool testxor16(size_t size) {
     big_set[i] = i; // we use contiguous values
   }
   // we construct the filter
-  xor16_populate(big_set, size, &filter);
+  if(!xor16_populate(big_set, size, &filter)) { return false; }
   for (size_t i = 0; i < size; i++) {
     if (!xor16_contain(big_set[i], &filter)) {
       printf("bug!\n");
@@ -103,7 +103,7 @@ bool testxor16(size_t size) {
   }
 
   size_t random_matches = 0;
-  size_t trials = 10000000; //(uint64_t)rand() << 32 + rand()
+  size_t trials = 10000000;
   for (size_t i = 0; i < trials; i++) {
     uint64_t random_key = ((uint64_t)rand() << 32) + rand();
     if (xor16_contain(random_key, &filter)) {
@@ -134,7 +134,7 @@ bool testbufferedxor16(size_t size) {
     big_set[i] = i; // we use contiguous values
   }
   // we construct the filter
-  xor16_buffered_populate(big_set, size, &filter);
+  if(!xor16_buffered_populate(big_set, size, &filter)) { return false; }
   for (size_t i = 0; i < size; i++) {
     if (!xor16_contain(big_set[i], &filter)) {
       printf("bug!\n");
@@ -143,7 +143,7 @@ bool testbufferedxor16(size_t size) {
   }
 
   size_t random_matches = 0;
-  size_t trials = 10000000; //(uint64_t)rand() << 32 + rand()
+  size_t trials = 10000000;
   for (size_t i = 0; i < trials; i++) {
     uint64_t random_key = ((uint64_t)rand() << 32) + rand();
     if (xor16_contain(random_key, &filter)) {
@@ -164,7 +164,7 @@ bool testbufferedxor16(size_t size) {
 }
 
 bool testbinaryfuse8(size_t size) {
-  printf("testing binary fuse8\n");
+  printf("testing binary fuse8 with size %zu\n", size);
   binary_fuse8_t filter;
   binary_fuse8_allocate(size, &filter);
   // we need some set of values
@@ -173,7 +173,7 @@ bool testbinaryfuse8(size_t size) {
     big_set[i] = i; // we use contiguous values
   }
   // we construct the filter
-  binary_fuse8_populate(big_set, size, &filter);
+  if(!binary_fuse8_populate(big_set, size, &filter)) { printf("failure to populate\n"); return false; }
   for (size_t i = 0; i < size; i++) {
     if (!binary_fuse8_contain(big_set[i], &filter)) {
       printf("bug!\n");
@@ -182,7 +182,7 @@ bool testbinaryfuse8(size_t size) {
   }
 
   size_t random_matches = 0;
-  size_t trials = 10000000; //(uint64_t)rand() << 32 + rand()
+  size_t trials = 10000000;
   for (size_t i = 0; i < trials; i++) {
     uint64_t random_key = ((uint64_t)rand() << 32) + rand();
     if (binary_fuse8_contain(random_key, &filter)) {
@@ -214,7 +214,7 @@ bool testbinaryfuse16(size_t size) {
     big_set[i] = i; // we use contiguous values
   }
   // we construct the filter
-  binary_fuse16_populate(big_set, size, &filter);
+  if(!binary_fuse16_populate(big_set, size, &filter)) {  printf("failure to populate\n"); return false; }
   for (size_t i = 0; i < size; i++) {
     if (!binary_fuse16_contain(big_set[i], &filter)) {
       printf("bug!\n");
@@ -223,7 +223,7 @@ bool testbinaryfuse16(size_t size) {
   }
 
   size_t random_matches = 0;
-  size_t trials = 10000000; //(uint64_t)rand() << 32 + rand()
+  size_t trials = 10000000;
   for (size_t i = 0; i < trials; i++) {
     uint64_t random_key = ((uint64_t)rand() << 32) + rand();
     if (binary_fuse16_contain(random_key, &filter)) {
@@ -251,15 +251,15 @@ bool testbinaryfuse8_dup(size_t size) {
   binary_fuse8_allocate(size, &filter);
   // we need some set of values
   uint64_t *big_set = (uint64_t *)malloc(sizeof(uint64_t) * size);
-  size_t repeated_size = size / 100;
+  size_t repeated_size = 10;
   for (size_t i = 0; i < size - repeated_size; i++) {
     big_set[i] = i; // we use contiguous values
   }
   for (size_t i = 0; i < repeated_size; i++) {
-    big_set[size - i] = i; // we use contiguous values
+    big_set[size - i - 1] = i; // we use contiguous values
   }
   // we construct the filter
-  binary_fuse8_populate(big_set, size, &filter);
+  if(!binary_fuse8_populate(big_set, size, &filter)) { return false; }
   for (size_t i = 0; i < size; i++) {
     if (!binary_fuse8_contain(big_set[i], &filter)) {
       printf("bug!\n");
@@ -268,7 +268,7 @@ bool testbinaryfuse8_dup(size_t size) {
   }
 
   size_t random_matches = 0;
-  size_t trials = 10000000; //(uint64_t)rand() << 32 + rand()
+  size_t trials = 10000000;
   for (size_t i = 0; i < trials; i++) {
     uint64_t random_key = ((uint64_t)rand() << 32) + rand();
     if (binary_fuse8_contain(random_key, &filter)) {
@@ -296,15 +296,15 @@ bool testbinaryfuse16_dup(size_t size) {
   binary_fuse16_allocate(size, &filter);
   // we need some set of values
   uint64_t *big_set = (uint64_t *)malloc(sizeof(uint64_t) * size);
-  size_t repeated_size = size / 100;
+  size_t repeated_size = 10;
   for (size_t i = 0; i < size - repeated_size; i++) {
     big_set[i] = i; // we use contiguous values
   }
   for (size_t i = 0; i < repeated_size; i++) {
-    big_set[size - i] = i; // we use contiguous values
+    big_set[size - i - 1] = i; // we use contiguous values
   }
   // we construct the filter
-  binary_fuse16_populate(big_set, size, &filter);
+  if(!binary_fuse16_populate(big_set, size, &filter)) { return false; }
   for (size_t i = 0; i < size; i++) {
     if (!binary_fuse16_contain(big_set[i], &filter)) {
       printf("bug!\n");
@@ -313,7 +313,7 @@ bool testbinaryfuse16_dup(size_t size) {
   }
 
   size_t random_matches = 0;
-  size_t trials = 10000000; //(uint64_t)rand() << 32 + rand()
+  size_t trials = 10000000;
   for (size_t i = 0; i < trials; i++) {
     uint64_t random_key = ((uint64_t)rand() << 32) + rand();
     if (binary_fuse16_contain(random_key, &filter)) {
@@ -336,30 +336,30 @@ bool testbinaryfuse16_dup(size_t size) {
 int main() {
   for(size_t size = 1000; size <= 1000000; size *= 10) {
     printf("== size = %zu \n", size);
-    testbinaryfuse8(size);
+    if(!testbinaryfuse8(size)) { abort(); }
     printf("\n");
-    testbinaryfuse16(size);
+    if(!testbinaryfuse16(size)) { abort(); }
     printf("\n");
-    testbinaryfuse8_dup(size);
+    if(!testbinaryfuse8_dup(size)) { abort(); }
     printf("\n");
-    testbinaryfuse16_dup(size);
+    if(!testbinaryfuse16_dup(size)) { abort(); }
     printf("\n");
-    testbufferedxor8(size);
+    if(!testbufferedxor8(size)) { abort(); }
     printf("\n");
-    testbufferedxor16(size);
+    if(!testbufferedxor16(size)) { abort(); }
     printf("\n");
-    testxor8(size);
+    if(!testxor8(size)) { abort(); }
     printf("\n");
-    testxor16(size);
+    if(!testxor16(size)) { abort(); }
     printf("\n");
     printf("======\n");
   }
 
   // test small edge-case binary fuse input sizes
-  testbinaryfuse8(0);
-  testbinaryfuse8(1);
-  testbinaryfuse8(2);
-  testbinaryfuse16(0);
-  testbinaryfuse16(1);
-  testbinaryfuse16(2);
+  if(!testbinaryfuse8(0)) { abort(); }
+  if(!testbinaryfuse8(1)) { abort(); }
+  if(!testbinaryfuse8(2)) { abort(); }
+  if(!testbinaryfuse16(0)) { abort(); }
+  if(!testbinaryfuse16(1)) { abort(); }
+  if(!testbinaryfuse16(2)) { abort(); }
 }

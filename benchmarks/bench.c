@@ -16,7 +16,8 @@ bool testxor8(size_t size) {
     big_set[i] = i; // we use contiguous values
   }
   // we construct the filter
-  xor8_populate(big_set, size, &filter); // warm the cache
+  bool constructed = xor8_populate(big_set, size, &filter); // warm the cache
+  if(!constructed) { return false; }
   for (size_t times = 0; times < 5; times++) {
     clock_t t;
     t = clock();
@@ -43,7 +44,8 @@ bool testbufferedxor8(size_t size) {
     big_set[i] = i; // we use contiguous values
   }
   // we construct the filter
-  xor8_buffered_populate(big_set, size, &filter); // warm the cache
+  bool constructed = xor8_buffered_populate(big_set, size, &filter); // warm the cache
+  if(!constructed) { return false; }  
   for (size_t times = 0; times < 5; times++) {
     clock_t t;
     t = clock();
@@ -70,7 +72,8 @@ bool testxor16(size_t size) {
     big_set[i] = i; // we use contiguous values
   }
   // we construct the filter
-  xor16_populate(big_set, size, &filter); // warm the cache
+  bool constructed = xor16_populate(big_set, size, &filter); // warm the cache
+  if(!constructed) { return false; }  
   for (size_t times = 0; times < 5; times++) {
     clock_t t;
     t = clock();
@@ -97,7 +100,8 @@ bool testbufferedxor16(size_t size) {
     big_set[i] = i; // we use contiguous values
   }
   // we construct the filter
-  xor16_buffered_populate(big_set, size, &filter); // warm the cache
+  bool constructed = xor16_buffered_populate(big_set, size, &filter); // warm the cache
+  if(!constructed) { return false; }
   for (size_t times = 0; times < 5; times++) {
     clock_t t;
     t = clock();
@@ -125,7 +129,8 @@ bool testbinaryfuse8(size_t size) {
     big_set[i] = i; // we use contiguous values
   }
   // we construct the filter
-  binary_fuse8_populate(big_set, size, &filter); // warm the cache
+  bool constructed = binary_fuse8_populate(big_set, size, &filter); // warm the cache
+  if(!constructed) { return false; }
   for (size_t times = 0; times < 5; times++) {
     clock_t t;
     t = clock();
@@ -153,7 +158,8 @@ bool testbinaryfuse16(size_t size) {
     big_set[i] = i; // we use contiguous values
   }
   // we construct the filter
-  binary_fuse16_populate(big_set, size, &filter); // warm the cache
+  bool constructed = binary_fuse16_populate(big_set, size, &filter); // warm the cache
+  if(!constructed) { return false; }
   for (size_t times = 0; times < 5; times++) {
     clock_t t;
     t = clock();
@@ -170,12 +176,12 @@ bool testbinaryfuse16(size_t size) {
 
 int main() {
   for (size_t s = 10000000; s <= 10000000; s *= 10) {
-    testbinaryfuse8(s);
-    testbufferedxor8(s);
-    testxor8(s);
-    testbinaryfuse16(s);
-    testbufferedxor16(s);
-    testxor16(s);
+    if (!testbinaryfuse8(s)) { abort(); }
+    if (!testbufferedxor8(s)) { abort(); }
+    if (!testxor8(s)) { abort(); }
+    if (!testbinaryfuse16(s)) { abort(); }
+    if (!testbufferedxor16(s)) { abort(); }
+    if (!testxor16(s)) { abort(); }
 
     printf("\n");
   }
