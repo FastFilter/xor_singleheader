@@ -58,7 +58,7 @@ If you want a C++ version, you can  roll your own:
 ```C++
 #include "xorfilter.h"
 
-class Xor8 {
+class BinaryFuse {
 public:
     explicit BinaryFuse(const size_t size) {
         if (!binary_fuse8_allocate(size, &filter)) {
