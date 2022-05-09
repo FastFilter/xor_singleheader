@@ -38,6 +38,9 @@ if(! is_ok ) {
 is_ok = binary_fuse8_populate(big_set, size, &filter);
 if(! is_ok ) {
     // do something (it should not fail in practice unless you have many duplicated hash values)
+    // if you have many duplicated values and you do not want to prune them, you may simply
+    // sort the input: the algorithm will succeed in the presence of a sorted input even if
+    // there are many duplicates.
 }
 binary_fuse8_contain(big_set[0], &filter); // will be true
 binary_fuse8_contain(somerandomvalue, &filter); // will be false with high probability
