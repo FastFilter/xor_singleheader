@@ -5,7 +5,7 @@ Bloom filters are used to quickly check whether an element is part of a set.
 Xor filters and binary fuse filters are faster and more concise alternative to Bloom filters.
 They are also smaller than cuckoo filters.
 
-* Thomas Mueller Graf,  Daniel Lemire, Binary Fuse Filters: Fast and Smaller Than Xor Filters
+* Thomas Mueller Graf, Daniel Lemire, [Binary Fuse Filters: Fast and Smaller Than Xor Filters](http://arxiv.org/abs/2201.01174), Journal of Experimental Algorithmics (to appear). DOI: 10.1145/3510449   
 * Thomas Mueller Graf,  Daniel Lemire, [Xor Filters: Faster and Smaller Than Bloom and Cuckoo Filters](https://arxiv.org/abs/1912.08258), Journal of Experimental Algorithmics 25 (1), 2020. DOI: 10.1145/3376122
 
 
@@ -38,6 +38,9 @@ if(! is_ok ) {
 is_ok = binary_fuse8_populate(big_set, size, &filter);
 if(! is_ok ) {
     // do something (it should not fail in practice unless you have many duplicated hash values)
+    // if you have many duplicated values and you do not want to prune them, you may simply
+    // sort the input: the algorithm will succeed in the presence of a sorted input even if
+    // there are many duplicates.
 }
 binary_fuse8_contain(big_set[0], &filter); // will be true
 binary_fuse8_contain(somerandomvalue, &filter); // will be false with high probability
@@ -58,7 +61,7 @@ If you want a C++ version, you can  roll your own:
 ```C++
 #include "xorfilter.h"
 
-class Xor8 {
+class BinaryFuse {
 public:
     explicit BinaryFuse(const size_t size) {
         if (!binary_fuse8_allocate(size, &filter)) {

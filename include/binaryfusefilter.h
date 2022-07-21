@@ -200,6 +200,9 @@ static inline uint8_t binary_fuse_mod3(uint8_t x) {
 // 100), it should never fail, except if there are many duplicated keys. If it fails,
 // a return value of false is provided.
 //
+//
+// If there are many duplicated keys and you do not want to remove them, you can first
+// sort your input, the algorithm will then work adequately.
 bool binary_fuse8_populate(const uint64_t *keys, uint32_t size,
                            binary_fuse8_t *filter) {
   uint64_t rng_counter = 0x726b2b9d438b9d4d;
@@ -484,6 +487,8 @@ static inline void binary_fuse16_free(binary_fuse16_t *filter) {
 // 100), it should never fail, except if there are many duplicated keys. If it fails,
 // a return value of false is provided.
 //
+// If there are many duplicated keys and you do not want to remove them, you can first
+// sort your input, the algorithm will then work adequately.
 bool binary_fuse16_populate(const uint64_t *keys, uint32_t size,
                            binary_fuse16_t *filter) {
   uint64_t rng_counter = 0x726b2b9d438b9d4d;
