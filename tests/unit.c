@@ -333,7 +333,30 @@ bool testbinaryfuse16_dup(size_t size) {
   return true;
 }
 
+void failure_rate_binary_fuse16() {
+  printf("testing binary fuse16 for failure rate\n");
+  // we construct many 5000-long input cases and check the probability of failure.
+  size_t size = 5000;
+  uint64_t *big_set = (uint64_t *)malloc(sizeof(uint64_t) * size);
+  binary_fuse16_t filter;
+  binary_fuse16_allocate(size, &filter);
+  size_t failure = 0;
+  size_t total_trials = 1000000;
+
+  for(size_t trial = 0; trial <= 1000; trial++) {
+    for (size_t i = 0; i < size; i++) {
+      big_set[i] = rand() + (((uint64_t) rand()) << 32);
+    }
+    if(!binary_fuse16_populate(big_set, size, &filter)) {
+      failure++;
+    }
+  }
+  printf("failures %zu out of %zu\n\n", failure, total_trials);
+  free(big_set);
+}
+
 int main() {
+  failure_rate_binary_fuse16();
   for(size_t size = 1000; size <= 1000000; size *= 10) {
     printf("== size = %zu \n", size);
     if(!testbinaryfuse8(size)) { abort(); }

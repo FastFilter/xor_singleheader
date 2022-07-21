@@ -9,7 +9,7 @@
 #include <string.h>
 #ifndef XOR_MAX_ITERATIONS
 #define XOR_MAX_ITERATIONS                                                     \
-  100 // probabillity of success should always be > 0.5 so 100 iterations is
+  100 // probability of success should always be > 0.5 so 100 iterations is
       // highly unlikely
 #endif
 
