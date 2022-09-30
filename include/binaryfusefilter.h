@@ -121,7 +121,7 @@ static inline uint32_t binary_fuse_calculate_segment_length(uint32_t arity,
   }
 }
 
-static double binary_fuse8_max(double a, double b) {
+static inline double binary_fuse_max(double a, double b) {
   if (a < b) {
     return b;
   }
@@ -131,9 +131,9 @@ static double binary_fuse8_max(double a, double b) {
 static inline double binary_fuse_calculate_size_factor(uint32_t arity,
                                                         uint32_t size) {
   if (arity == 3) {
-    return binary_fuse8_max(1.125, 0.875 + 0.25 * log(1000000.0) / log((double)size));
+    return binary_fuse_max(1.125, 0.875 + 0.25 * log(1000000.0) / log((double)size));
   } else if (arity == 4) {
-    return binary_fuse8_max(1.075, 0.77 + 0.305 * log(600000.0) / log((double)size));
+    return binary_fuse_max(1.075, 0.77 + 0.305 * log(600000.0) / log((double)size));
   } else {
     return 2.0;
   }
@@ -582,7 +582,13 @@ inline bool binary_fuse16_populate(const uint64_t *keys, uint32_t size,
       error = (t2count[h1] < 4) ? 1 : error;
       error = (t2count[h2] < 4) ? 1 : error;
     }
-    if(error) { continue; }
+    if(error) {
+      memset(reverseOrder, 0, sizeof(uint64_t[size]));
+      memset(t2count, 0, sizeof(uint8_t[capacity]));
+      memset(t2hash, 0, sizeof(uint64_t[capacity]));
+      filter->Seed = binary_fuse_rng_splitmix64(&rng_counter);
+      continue;
+    }
 
     // End of key addition
     uint32_t Qsize = 0;
