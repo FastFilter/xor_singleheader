@@ -62,9 +62,9 @@ typedef struct binary_fuse8_s {
 
 #ifdef _MSC_VER
 // Windows programmers who target 32-bit platform may need help:
-uint64_t binary_fuse_mulhi(uint64_t a, uint64_t b) { return __umulh(a, b); }
+static inline uint64_t binary_fuse_mulhi(uint64_t a, uint64_t b) { return __umulh(a, b); }
 #else
-uint64_t binary_fuse_mulhi(uint64_t a, uint64_t b) {
+static inline uint64_t binary_fuse_mulhi(uint64_t a, uint64_t b) {
   return ((__uint128_t)a * b) >> 64;
 }
 #endif
@@ -121,7 +121,7 @@ static inline uint32_t binary_fuse_calculate_segment_length(uint32_t arity,
   }
 }
 
-double binary_fuse8_max(double a, double b) {
+static double binary_fuse8_max(double a, double b) {
   if (a < b) {
     return b;
   }
@@ -203,7 +203,7 @@ static inline uint8_t binary_fuse_mod3(uint8_t x) {
 //
 // If there are many duplicated keys and you do not want to remove them, you can first
 // sort your input, the algorithm will then work adequately.
-bool binary_fuse8_populate(const uint64_t *keys, uint32_t size,
+inline bool binary_fuse8_populate(const uint64_t *keys, uint32_t size,
                            binary_fuse8_t *filter) {
   uint64_t rng_counter = 0x726b2b9d438b9d4d;
   filter->Seed = binary_fuse_rng_splitmix64(&rng_counter);
@@ -489,7 +489,7 @@ static inline void binary_fuse16_free(binary_fuse16_t *filter) {
 //
 // If there are many duplicated keys and you do not want to remove them, you can first
 // sort your input, the algorithm will then work adequately.
-bool binary_fuse16_populate(const uint64_t *keys, uint32_t size,
+inline bool binary_fuse16_populate(const uint64_t *keys, uint32_t size,
                            binary_fuse16_t *filter) {
   uint64_t rng_counter = 0x726b2b9d438b9d4d;
   filter->Seed = binary_fuse_rng_splitmix64(&rng_counter);

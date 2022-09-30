@@ -429,7 +429,7 @@ static inline uint32_t xor_flushone_decrement_buffer(xor_setbuffer_t *buffer,
 // it should never fail, except if there are duplicated keys. If it fails,
 // a return value of false is provided.
 //
-bool xor8_buffered_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
+inline bool xor8_buffered_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
   if(size == 0) { return false; }
   uint64_t rng_counter = 1;
   filter->seed = xor_rng_splitmix64(&rng_counter);
@@ -641,7 +641,7 @@ bool xor8_buffered_populate(const uint64_t *keys, uint32_t size, xor8_t *filter)
 // it should never fail, except if there are duplicated keys. If it fails,
 // a return value of false is provided.
 //
-bool xor8_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
+inline bool xor8_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
   if(size == 0) { return false; }
   uint64_t rng_counter = 1;
   filter->seed = xor_rng_splitmix64(&rng_counter);
@@ -849,7 +849,7 @@ bool xor8_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
 // it should never fail, except if there are duplicated keys. If it fails,
 // a return value of false is provided.
 //
-bool xor16_buffered_populate(const uint64_t *keys, uint32_t size, xor16_t *filter) {
+inline bool xor16_buffered_populate(const uint64_t *keys, uint32_t size, xor16_t *filter) {
   if(size == 0) { return false; }
   uint64_t rng_counter = 1;
   filter->seed = xor_rng_splitmix64(&rng_counter);
@@ -1064,7 +1064,7 @@ bool xor16_buffered_populate(const uint64_t *keys, uint32_t size, xor16_t *filte
 // it should never fail, except if there are duplicated keys. If it fails,
 // a return value of false is provided.
 //
-bool xor16_populate(const uint64_t *keys, uint32_t size, xor16_t *filter) {
+inline bool xor16_populate(const uint64_t *keys, uint32_t size, xor16_t *filter) {
   if(size == 0) { return false; }
   uint64_t rng_counter = 1;
   filter->seed = xor_rng_splitmix64(&rng_counter);
