@@ -20,10 +20,11 @@ To use the state-of-the-art binary fuse filters, simply add (for example) the `b
 For a simple application built on this library, see 
 https://github.com/FastFilter/FilterPassword
 
-We are assuming that your set is made of 64-bit integers. If you have strings
-or other data structures, you need to hash them first to a 64-bit integer. It
+We are assuming that your set is made of 64-bit integers. If you have a set of strings
+or other data structures, you need to hash them first to a 64-bit integer.It
 is not important to have a good hash function, but collisions should be unlikely
-(~1/2^64).
+(~1/2^64). A few collisions are acceptable, but we expect that your initial set 
+should have no duplicated entry. 
 
 The basic version works with 8-bit word and has a false-positive probability of
 1/256 (or 0.4%).
