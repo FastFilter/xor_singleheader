@@ -21,6 +21,12 @@ include(GNUInstallDirs)
 
 add_library(xor_singleheader INTERFACE)
 add_library(xor_singleheader::xor_singleheader ALIAS xor_singleheader)
+
+find_library(MATH_LIBRARY m)
+if(MATH_LIBRARY)
+    target_link_libraries(xor_singleheader INTERFACE ${MATH_LIBRARY})
+endif()
+
 target_include_directories(
   xor_singleheader
   INTERFACE
