@@ -1,5 +1,5 @@
 ## Header-only Xor and Binary Fuse Filter library
-[![Build Status](https://travis-ci.org/FastFilter/xor_singleheader.svg?branch=master)](https://travis-ci.org/FastFilter/xor_singleheader)
+[![Ubuntu 22.04 CI (GCC 11)](https://github.com/FastFilter/xor_singleheader/actions/workflows/ubuntu.yml/badge.svg)](https://github.com/FastFilter/xor_singleheader/actions/workflows/ubuntu.yml)
 
 Bloom filters are used to quickly check whether an element is part of a set.
 Xor filters and binary fuse filters are faster and more concise alternative to Bloom filters.
