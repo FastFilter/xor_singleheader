@@ -13,5 +13,5 @@ bench : benchmarks/bench.c include/xorfilter.h include/binaryfusefilter.h
 test: unit ab
 	./unit
 
-clean: 
+clean:
 	rm -f unit bench

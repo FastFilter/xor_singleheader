@@ -45,7 +45,7 @@ bool testbufferedxor8(size_t size) {
   }
   // we construct the filter
   bool constructed = xor8_buffered_populate(big_set, size, &filter); // warm the cache
-  if(!constructed) { return false; }  
+  if(!constructed) { return false; }
   for (size_t times = 0; times < 5; times++) {
     clock_t t;
     t = clock();
@@ -73,7 +73,7 @@ bool testxor16(size_t size) {
   }
   // we construct the filter
   bool constructed = xor16_populate(big_set, size, &filter); // warm the cache
-  if(!constructed) { return false; }  
+  if(!constructed) { return false; }
   for (size_t times = 0; times < 5; times++) {
     clock_t t;
     t = clock();
