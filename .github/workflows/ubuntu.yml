@@ -1,0 +1,19 @@
+name: Ubuntu 22.04 CI (GCC 11)
+
+on: [push, pull_request]
+
+jobs:
+  ubuntu-build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use cmake
+        run: |
+          mkdir build &&
+          cd build &&
+          cmake .. -DCMAKE_INSTALL_PREFIX:PATH=destination &&
+          cmake --build .   &&
+          ctest --output-on-failure  &&
+          cmake --install . &&
+          cd ../tests/installation_tests/find &&
+          mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX:PATH=../../../build/destination .. &&  cmake --build . &&

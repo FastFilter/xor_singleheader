@@ -424,7 +424,7 @@ static inline uint32_t xor_flushone_decrement_buffer(xor_setbuffer_t *buffer,
 // The caller is responsable for calling binary_fuse8_allocate(size,filter)
 // before. For best performance, the caller should ensure that there are not too
 // many duplicated keys.
-inline bool xor8_buffered_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
+static inline bool xor8_buffered_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
   if(size == 0) { return false; }
   uint64_t rng_counter = 1;
   filter->seed = xor_rng_splitmix64(&rng_counter);
@@ -475,7 +475,7 @@ inline bool xor8_buffered_populate(const uint64_t *keys, uint32_t size, xor8_t *
       // the cosmic-ray probability (i.e., a cosmic ray corrupts your system),
       // but if it happens, we just fill the fingerprint with ones which
       // will flag all possible keys as 'possible', ensuring a correct result.
-      memset(filter->Fingerprints, ~0, filter->ArrayLength);
+      memset(filter->fingerprints, ~0,  3 * filter->blockLength);
       xor_free_buffer(&buffer0);
       xor_free_buffer(&buffer1);
       xor_free_buffer(&buffer2);
@@ -635,7 +635,7 @@ inline bool xor8_buffered_populate(const uint64_t *keys, uint32_t size, xor8_t *
 // The caller is responsable for calling binary_fuse8_allocate(size,filter)
 // before. For best performance, the caller should ensure that there are not too
 // many duplicated keys.
-inline bool xor8_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
+static inline bool xor8_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
   if(size == 0) { return false; }
   uint64_t rng_counter = 1;
   filter->seed = xor_rng_splitmix64(&rng_counter);
@@ -673,7 +673,7 @@ inline bool xor8_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
       // the cosmic-ray probability (i.e., a cosmic ray corrupts your system),
       // but if it happens, we just fill the fingerprint with ones which
       // will flag all possible keys as 'possible', ensuring a correct result.
-      memset(filter->Fingerprints, ~0, filter->ArrayLength);
+      memset(filter->fingerprints, ~0, 3 * filter->blockLength);
       free(sets);
       free(Q);
       free(stack);
@@ -842,7 +842,7 @@ inline bool xor8_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
 // The caller is responsable for calling binary_fuse8_allocate(size,filter)
 // before. For best performance, the caller should ensure that there are not too
 // many duplicated keys.
-inline bool xor16_buffered_populate(const uint64_t *keys, uint32_t size, xor16_t *filter) {
+static inline bool xor16_buffered_populate(const uint64_t *keys, uint32_t size, xor16_t *filter) {
   if(size == 0) { return false; }
   uint64_t rng_counter = 1;
   filter->seed = xor_rng_splitmix64(&rng_counter);
@@ -893,7 +893,7 @@ inline bool xor16_buffered_populate(const uint64_t *keys, uint32_t size, xor16_t
       // the cosmic-ray probability (i.e., a cosmic ray corrupts your system),
       // but if it happens, we just fill the fingerprint with ones which
       // will flag all possible keys as 'possible', ensuring a correct result.
-      memset(filter->Fingerprints, ~0, filter->ArrayLength * sizeof(uint16_t));
+      memset(filter->fingerprints, ~0, 3 * filter->blockLength * sizeof(uint16_t));
       xor_free_buffer(&buffer0);
       xor_free_buffer(&buffer1);
       xor_free_buffer(&buffer2);
@@ -1056,7 +1056,7 @@ inline bool xor16_buffered_populate(const uint64_t *keys, uint32_t size, xor16_t
 // The caller is responsable for calling binary_fuse8_allocate(size,filter)
 // before. For best performance, the caller should ensure that there are not too
 // many duplicated keys.
-inline bool xor16_populate(const uint64_t *keys, uint32_t size, xor16_t *filter) {
+static inline bool xor16_populate(const uint64_t *keys, uint32_t size, xor16_t *filter) {
   if(size == 0) { return false; }
   uint64_t rng_counter = 1;
   filter->seed = xor_rng_splitmix64(&rng_counter);
@@ -1095,7 +1095,7 @@ inline bool xor16_populate(const uint64_t *keys, uint32_t size, xor16_t *filter)
       // the cosmic-ray probability (i.e., a cosmic ray corrupts your system),
       // but if it happens, we just fill the fingerprint with ones which
       // will flag all possible keys as 'possible', ensuring a correct result.
-      memset(filter->Fingerprints, ~0, filter->ArrayLength * sizeof(uint16_t));
+      memset(filter->fingerprints, ~0, 3 * filter->blockLength * sizeof(uint16_t));
       free(sets);
       free(Q);
       free(stack);

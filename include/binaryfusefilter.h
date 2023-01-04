@@ -86,6 +86,7 @@ static inline binary_hashes_t binary_fuse8_hash_batch(uint64_t hash,
   ans.h2 ^= (uint32_t)(hash)&filter->SegmentLengthMask;
   return ans;
 }
+
 static inline uint32_t binary_fuse8_hash(int index, uint64_t hash,
                                         const binary_fuse8_t *filter) {
     uint64_t h = binary_fuse_mulhi(hash, filter->SegmentCountLength);
@@ -196,7 +197,7 @@ static inline uint8_t binary_fuse_mod3(uint8_t x) {
 // The caller is responsable for calling binary_fuse8_allocate(size,filter)
 // before. For best performance, the caller should ensure that there are not too
 // many duplicated keys.
-inline bool binary_fuse8_populate(const uint64_t *keys, uint32_t size,
+static inline bool binary_fuse8_populate(const uint64_t *keys, uint32_t size,
                            binary_fuse8_t *filter) {
   uint64_t rng_counter = 0x726b2b9d438b9d4d;
   filter->Seed = binary_fuse_rng_splitmix64(&rng_counter);
@@ -480,7 +481,7 @@ static inline void binary_fuse16_free(binary_fuse16_t *filter) {
 // The caller is responsable for calling binary_fuse8_allocate(size,filter)
 // before. For best performance, the caller should ensure that there are not too
 // many duplicated keys.
-inline bool binary_fuse16_populate(const uint64_t *keys, uint32_t size,
+static inline bool binary_fuse16_populate(const uint64_t *keys, uint32_t size,
                            binary_fuse16_t *filter) {
   uint64_t rng_counter = 0x726b2b9d438b9d4d;
   filter->Seed = binary_fuse_rng_splitmix64(&rng_counter);

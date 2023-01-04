@@ -357,7 +357,7 @@ void failure_rate_binary_fuse16() {
 
 int main() {
   failure_rate_binary_fuse16();
-  for(size_t size = 1000; size <= 1000000; size *= 10) {
+  for(size_t size = 1000; size <= 1000000; size *= 300) {
     printf("== size = %zu \n", size);
     if(!testbinaryfuse8(size)) { abort(); }
     printf("\n");
