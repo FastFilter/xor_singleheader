@@ -191,18 +191,11 @@ static inline uint8_t binary_fuse_mod3(uint8_t x) {
     return x > 2 ? x - 3 : x;
 }
 
-// construct the filter, returns true on success, false on failure.
-// most likely, a failure is due to too high a memory usage
-// size is the number of keys
+// Construct the filter, returns true on success, false on failure.
+// The algorithm fails when there is insufficient memory.
 // The caller is responsable for calling binary_fuse8_allocate(size,filter)
-// before. The caller is responsible to ensure that there are not too many  duplicated
-// keys. The inner loop will run up to XOR_MAX_ITERATIONS times (default on
-// 100), it should never fail, except if there are many duplicated keys. If it fails,
-// a return value of false is provided.
-//
-//
-// If there are many duplicated keys and you do not want to remove them, you can first
-// sort your input, the algorithm will then work adequately.
+// before. For best performance, the caller should ensure that there are not too
+// many duplicated keys.
 inline bool binary_fuse8_populate(const uint64_t *keys, uint32_t size,
                            binary_fuse8_t *filter) {
   uint64_t rng_counter = 0x726b2b9d438b9d4d;
@@ -235,14 +228,18 @@ inline bool binary_fuse8_populate(const uint64_t *keys, uint32_t size,
   reverseOrder[size] = 1;
   for (int loop = 0; true; ++loop) {
     if (loop + 1 > XOR_MAX_ITERATIONS) {
-      fprintf(stderr, "Too many iterations. Are all your keys unique?");
+      // The probability of this happening is lower than the
+      // the cosmic-ray probability (i.e., a cosmic ray corrupts your system),
+      // but if it happens, we just fill the fingerprint with ones which
+      // will flag all possible keys as 'possible', ensuring a correct result.
+      memset(filter->Fingerprints, ~0, filter->ArrayLength);
       free(alone);
       free(t2count);
       free(reverseH);
       free(t2hash);
       free(reverseOrder);
       free(startPos);
-      return false;
+      return true;
     }
 
     for (uint32_t i = 0; i < block; i++) {
@@ -301,7 +298,7 @@ inline bool binary_fuse8_populate(const uint64_t *keys, uint32_t size,
       memset(t2count, 0, sizeof(uint8_t[capacity]));
       memset(t2hash, 0, sizeof(uint64_t[capacity]));
       filter->Seed = binary_fuse_rng_splitmix64(&rng_counter);
-      continue; 
+      continue;
     }
 
     // End of key addition
@@ -478,17 +475,11 @@ static inline void binary_fuse16_free(binary_fuse16_t *filter) {
 }
 
 
-// construct the filter, returns true on success, false on failure.
-// most likely, a failure is due to too high a memory usage
-// size is the number of keys
+// Construct the filter, returns true on success, false on failure.
+// The algorithm fails when there is insufficient memory.
 // The caller is responsable for calling binary_fuse8_allocate(size,filter)
-// before. The caller is responsible to ensure that there are not too many duplicated
-// keys. The inner loop will run up to XOR_MAX_ITERATIONS times (default on
-// 100), it should never fail, except if there are many duplicated keys. If it fails,
-// a return value of false is provided.
-//
-// If there are many duplicated keys and you do not want to remove them, you can first
-// sort your input, the algorithm will then work adequately.
+// before. For best performance, the caller should ensure that there are not too
+// many duplicated keys.
 inline bool binary_fuse16_populate(const uint64_t *keys, uint32_t size,
                            binary_fuse16_t *filter) {
   uint64_t rng_counter = 0x726b2b9d438b9d4d;
@@ -521,7 +512,11 @@ inline bool binary_fuse16_populate(const uint64_t *keys, uint32_t size,
   reverseOrder[size] = 1;
   for (int loop = 0; true; ++loop) {
     if (loop + 1 > XOR_MAX_ITERATIONS) {
-      fprintf(stderr, "Too many iterations. Are all your keys unique?");
+      // The probability of this happening is lower than the
+      // the cosmic-ray probability (i.e., a cosmic ray corrupts your system),
+      // but if it happens, we just fill the fingerprint with ones which
+      // will flag all possible keys as 'possible', ensuring a correct result.
+      memset(filter->Fingerprints, ~0, filter->ArrayLength * sizeof(uint16_t));
       free(alone);
       free(t2count);
       free(reverseH);

@@ -5,26 +5,26 @@ Bloom filters are used to quickly check whether an element is part of a set.
 Xor filters and binary fuse filters are faster and more concise alternative to Bloom filters.
 They are also smaller than cuckoo filters. They are used in [production systems](https://github.com/datafuselabs/databend).
 
-* Thomas Mueller Graf, Daniel Lemire, [Binary Fuse Filters: Fast and Smaller Than Xor Filters](http://arxiv.org/abs/2201.01174), Journal of Experimental Algorithmics (to appear). DOI: 10.1145/3510449   
+* Thomas Mueller Graf, Daniel Lemire, [Binary Fuse Filters: Fast and Smaller Than Xor Filters](http://arxiv.org/abs/2201.01174), Journal of Experimental Algorithmics (to appear). DOI: 10.1145/3510449
 * Thomas Mueller Graf,  Daniel Lemire, [Xor Filters: Faster and Smaller Than Bloom and Cuckoo Filters](https://arxiv.org/abs/1912.08258), Journal of Experimental Algorithmics 25 (1), 2020. DOI: 10.1145/3376122
 
 
 <img src="figures/comparison.png" width="50%"/>
 
-This is a simple C header-only library. It implements both  binary fuse and xor filters.
+This is a simple C header-only library. It implements both binary fuse and xor filters.
 
 
 To use the state-of-the-art binary fuse filters, simply add (for example) the `binaryfusefilter.h` file to your project.  It is made available under the business-friendly Apache license.
 
 
-For a simple application built on this library, see 
+For a simple application built on this library, see
 https://github.com/FastFilter/FilterPassword
 
 We are assuming that your set is made of 64-bit integers. If you have a set of strings
-or other data structures, you need to hash them first to a 64-bit integer.It
+or other data structures, you need to hash them first to a 64-bit integer. It
 is not important to have a good hash function, but collisions should be unlikely
-(~1/2^64). A few collisions are acceptable, but we expect that your initial set 
-should have no duplicated entry. 
+(~1/2^64). A few collisions are acceptable, but we expect that your initial set
+should have no duplicated entry.
 
 The basic version works with 8-bit word and has a false-positive probability of
 1/256 (or 0.4%).
@@ -34,14 +34,11 @@ uint64_t *big_set = ...
 binary_fuse8_t filter;
 bool is_ok = binary_fuse8_allocate(size, &filter);
 if(! is_ok ) {
-    // do something (you may have run out of memory)
+    // do something (you have run out of memory)
 }
 is_ok = binary_fuse8_populate(big_set, size, &filter);
 if(! is_ok ) {
-    // do something (it should not fail in practice unless you have many duplicated hash values)
-    // if you have many duplicated values and you do not want to prune them, you may simply
-    // sort the input: the algorithm will succeed in the presence of a sorted input even if
-    // there are many duplicates.
+    // do something (you have run out of memory)
 }
 binary_fuse8_contain(big_set[0], &filter); // will be true
 binary_fuse8_contain(somerandomvalue, &filter); // will be false with high probability
@@ -49,15 +46,15 @@ binary_fuse8_contain(somerandomvalue, &filter); // will be false with high proba
 binary_fuse8_free(&filter);
 ```
 
-We also have a 16-bit version which uses about twice the memory, 
+We also have a 16-bit version which uses about twice the memory,
 but has a far lower false-positive probability (256 times smaller):
-about 0.0015%. The type is `binary_fuse16_t` and you may use it with 
+about 0.0015%. The type is `binary_fuse16_t` and you may use it with
 functions such as `binary_fuse16_allocate`, `binary_fuse16_populate`,
-`binary_fuse8_contain` and `binary_fuse8_free`. 
+`binary_fuse8_contain` and `binary_fuse8_free`.
 
-## C++ wrapper 
+## C++ wrapper
 
-If you want a C++ version, you can  roll your own:
+If you want a C++ version, you can roll your own:
 
 ```C++
 #include "xorfilter.h"
@@ -85,7 +82,7 @@ public:
     BinaryFuse(BinaryFuse && o) : filter(o.filter)  {
         o.filter.fingerprints = nullptr; // we take ownership for the data
     }
-    binary_fuse8_t filter; 
+    binary_fuse8_t filter;
 
 private:
     BinaryFuse(const BinaryFuse & o) = delete;
@@ -123,10 +120,10 @@ $ make test
 $ ./unit
 ./unit
 testing binary fuse8
- fpp 0.00392 (estimated) 
+ fpp 0.00392 (estimated)
  bits per entry 9.04
  bits per entry 7.99 (theoretical lower bound)
- efficiency ratio 1.131 
+ efficiency ratio 1.131
 ....
 ```
 
@@ -136,12 +133,12 @@ $ make bench
 $ ./bench
 
 ❯ ./bench
-testing binary fuse8 size = 10000000 
-It took 0.358196 seconds to build an index over 10000000 values. 
-It took 0.355775 seconds to build an index over 10000000 values. 
-It took 0.367437 seconds to build an index over 10000000 values. 
-It took 0.358578 seconds to build an index over 10000000 values. 
-It took 0.358220 seconds to build an index over 10000000 values.  
+testing binary fuse8 size = 10000000
+It took 0.358196 seconds to build an index over 10000000 values.
+It took 0.355775 seconds to build an index over 10000000 values.
+It took 0.367437 seconds to build an index over 10000000 values.
+It took 0.358578 seconds to build an index over 10000000 values.
+It took 0.358220 seconds to build an index over 10000000 values.
 ...
 ```
 

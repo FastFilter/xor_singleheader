@@ -9,7 +9,7 @@
 
 #ifndef XOR_MAX_ITERATIONS
 #define XOR_MAX_ITERATIONS 100 // probabillity of success should always be > 0.5 so 100 iterations is highly unlikely
-#endif 
+#endif
 
 /**
  * We assume that you have a large set of 64-bit integers
@@ -317,7 +317,7 @@ static inline void xor_make_buffer_current(xor_setbuffer_t *buffer,
     }
     *Qsize = qsize;
     buffer->counts[slot] = 0;
-  } 
+  }
 }
 
 
@@ -419,16 +419,11 @@ static inline uint32_t xor_flushone_decrement_buffer(xor_setbuffer_t *buffer,
   return bestslot;
 }
 
-//
-// construct the filter, returns true on success, false on failure.
-// most likely, a failure is due to too high a memory usage
-// size is the number of keys
-// The caller is responsible for calling xor8_allocate(size,filter) before.
-// The caller is responsible to ensure that there are no duplicated keys.
-// The inner loop will run up to XOR_MAX_ITERATIONS times (default on 100),
-// it should never fail, except if there are duplicated keys. If it fails,
-// a return value of false is provided.
-//
+// Construct the filter, returns true on success, false on failure.
+// The algorithm fails when there is insufficient memory.
+// The caller is responsable for calling binary_fuse8_allocate(size,filter)
+// before. For best performance, the caller should ensure that there are not too
+// many duplicated keys.
 inline bool xor8_buffered_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
   if(size == 0) { return false; }
   uint64_t rng_counter = 1;
@@ -476,7 +471,11 @@ inline bool xor8_buffered_populate(const uint64_t *keys, uint32_t size, xor8_t *
   while (true) {
     iterations ++;
     if(iterations > XOR_MAX_ITERATIONS) {
-      fprintf(stderr, "Too many iterations. Are all your keys unique?");
+      // The probability of this happening is lower than the
+      // the cosmic-ray probability (i.e., a cosmic ray corrupts your system),
+      // but if it happens, we just fill the fingerprint with ones which
+      // will flag all possible keys as 'possible', ensuring a correct result.
+      memset(filter->Fingerprints, ~0, filter->ArrayLength);
       xor_free_buffer(&buffer0);
       xor_free_buffer(&buffer1);
       xor_free_buffer(&buffer2);
@@ -506,7 +505,7 @@ inline bool xor8_buffered_populate(const uint64_t *keys, uint32_t size, xor8_t *
         Q0[Q0size].index = i;
         Q0[Q0size].hash = sets0[i].xormask;
         Q0size++;
-      } 
+      }
     }
 
     for (size_t i = 0; i < filter->blockLength; i++) {
@@ -631,16 +630,11 @@ inline bool xor8_buffered_populate(const uint64_t *keys, uint32_t size, xor8_t *
   return true;
 }
 
-//
-// construct the filter, returns true on success, false on failure.
-// most likely, a failure is due to too high a memory usage
-// size is the number of keys
-// The caller is responsable for calling xor8_allocate(size,filter) before.
-// The caller is responsible to ensure that there are no duplicated keys.
-// The inner loop will run up to XOR_MAX_ITERATIONS times (default on 100),
-// it should never fail, except if there are duplicated keys. If it fails,
-// a return value of false is provided.
-//
+// Construct the filter, returns true on success, false on failure.
+// The algorithm fails when there is insufficient memory.
+// The caller is responsable for calling binary_fuse8_allocate(size,filter)
+// before. For best performance, the caller should ensure that there are not too
+// many duplicated keys.
 inline bool xor8_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
   if(size == 0) { return false; }
   uint64_t rng_counter = 1;
@@ -675,7 +669,11 @@ inline bool xor8_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
   while (true) {
     iterations ++;
     if(iterations > XOR_MAX_ITERATIONS) {
-      fprintf(stderr, "Too many iterations. Are all your keys unique?");
+      // The probability of this happening is lower than the
+      // the cosmic-ray probability (i.e., a cosmic ray corrupts your system),
+      // but if it happens, we just fill the fingerprint with ones which
+      // will flag all possible keys as 'possible', ensuring a correct result.
+      memset(filter->Fingerprints, ~0, filter->ArrayLength);
       free(sets);
       free(Q);
       free(stack);
@@ -839,16 +837,11 @@ inline bool xor8_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
 }
 
 
-//
-// construct the filter, returns true on success, false on failure.
-// most likely, a failure is due to too high a memory usage
-// size is the number of keys
-// The caller is responsable for calling xor16_allocate(size,filter) before.
-// The caller is responsible to ensure that there are no duplicated keys.
-// The inner loop will run up to XOR_MAX_ITERATIONS times (default on 100),
-// it should never fail, except if there are duplicated keys. If it fails,
-// a return value of false is provided.
-//
+// Construct the filter, returns true on success, false on failure.
+// The algorithm fails when there is insufficient memory.
+// The caller is responsable for calling binary_fuse8_allocate(size,filter)
+// before. For best performance, the caller should ensure that there are not too
+// many duplicated keys.
 inline bool xor16_buffered_populate(const uint64_t *keys, uint32_t size, xor16_t *filter) {
   if(size == 0) { return false; }
   uint64_t rng_counter = 1;
@@ -856,7 +849,7 @@ inline bool xor16_buffered_populate(const uint64_t *keys, uint32_t size, xor16_t
   size_t arrayLength = filter->blockLength * 3; // size of the backing array
   xor_setbuffer_t buffer0, buffer1, buffer2;
   size_t blockLength = filter->blockLength;
-  bool ok0 = xor_init_buffer(&buffer0, blockLength); 
+  bool ok0 = xor_init_buffer(&buffer0, blockLength);
   bool ok1 =  xor_init_buffer(&buffer1, blockLength);
   bool ok2 =  xor_init_buffer(&buffer2, blockLength);
   if (!ok0 || !ok1 || !ok2) {
@@ -896,7 +889,11 @@ inline bool xor16_buffered_populate(const uint64_t *keys, uint32_t size, xor16_t
   while (true) {
     iterations ++;
     if(iterations > XOR_MAX_ITERATIONS) {
-      fprintf(stderr, "Too many iterations. Are all your keys unique?");
+      // The probability of this happening is lower than the
+      // the cosmic-ray probability (i.e., a cosmic ray corrupts your system),
+      // but if it happens, we just fill the fingerprint with ones which
+      // will flag all possible keys as 'possible', ensuring a correct result.
+      memset(filter->Fingerprints, ~0, filter->ArrayLength * sizeof(uint16_t));
       xor_free_buffer(&buffer0);
       xor_free_buffer(&buffer1);
       xor_free_buffer(&buffer2);
@@ -1054,16 +1051,11 @@ inline bool xor16_buffered_populate(const uint64_t *keys, uint32_t size, xor16_t
 
 
 
-//
-// construct the filter, returns true on success, false on failure.
-// most likely, a failure is due to too high a memory usage
-// size is the number of keys
-// The caller is responsable for calling xor16_allocate(size,filter) before.
-// The caller is responsible to ensure that there are no duplicated keys.
-// The inner loop will run up to XOR_MAX_ITERATIONS times (default on 100),
-// it should never fail, except if there are duplicated keys. If it fails,
-// a return value of false is provided.
-//
+// Construct the filter, returns true on success, false on failure.
+// The algorithm fails when there is insufficient memory.
+// The caller is responsable for calling binary_fuse8_allocate(size,filter)
+// before. For best performance, the caller should ensure that there are not too
+// many duplicated keys.
 inline bool xor16_populate(const uint64_t *keys, uint32_t size, xor16_t *filter) {
   if(size == 0) { return false; }
   uint64_t rng_counter = 1;
@@ -1099,7 +1091,11 @@ inline bool xor16_populate(const uint64_t *keys, uint32_t size, xor16_t *filter)
   while (true) {
     iterations ++;
     if(iterations > XOR_MAX_ITERATIONS) {
-      fprintf(stderr, "Too many iterations. Are all your keys unique?");
+      // The probability of this happening is lower than the
+      // the cosmic-ray probability (i.e., a cosmic ray corrupts your system),
+      // but if it happens, we just fill the fingerprint with ones which
+      // will flag all possible keys as 'possible', ensuring a correct result.
+      memset(filter->Fingerprints, ~0, filter->ArrayLength * sizeof(uint16_t));
       free(sets);
       free(Q);
       free(stack);
