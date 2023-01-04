@@ -524,7 +524,7 @@ static inline bool binary_fuse16_populate(const uint64_t *keys, uint32_t size,
       free(t2hash);
       free(reverseOrder);
       free(startPos);
-      return false;
+      return true;
     }
 
     for (uint32_t i = 0; i < block; i++) {

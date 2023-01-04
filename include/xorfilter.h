@@ -1099,7 +1099,7 @@ static inline bool xor16_populate(const uint64_t *keys, uint32_t size, xor16_t *
       free(sets);
       free(Q);
       free(stack);
-      return false;
+      return true;
     }
 
     memset(sets, 0, sizeof(xor_xorset_t) * arrayLength);

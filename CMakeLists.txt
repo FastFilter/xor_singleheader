@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.9)
 
-project(xor_singleheader VERSION 1.0.0 LANGUAGES C)
+project(xor_singleheader VERSION 1.0.1 LANGUAGES C)
 
 include(CTest)
 
