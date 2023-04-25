@@ -60,12 +60,72 @@ typedef struct binary_fuse8_s {
   uint8_t *Fingerprints;
 } binary_fuse8_t;
 
-#ifdef _MSC_VER
-// Windows programmers who target 32-bit platform may need help:
-static inline uint64_t binary_fuse_mulhi(uint64_t a, uint64_t b) { return __umulh(a, b); }
-#else
+// #ifdefs adapted from:
+//  https://stackoverflow.com/a/50958815
+#ifdef __SIZEOF_INT128__  // compilers supporting __uint128, e.g., gcc, clang
 static inline uint64_t binary_fuse_mulhi(uint64_t a, uint64_t b) {
   return ((__uint128_t)a * b) >> 64;
+}
+#elif defined(_M_X64) || defined(_MARM64)   // MSVC
+static inline uint64_t binary_fuse_mulhi(uint64_t a, uint64_t b) {
+  return __umulh(a, b);
+}
+#elif defined(_M_IA64)  // also MSVC
+static inline uint64_t binary_fuse_mulhi(uint64_t a, uint64_t b) {
+  unsigned __int64 hi;
+  (void) _umul128(a, b, &hi);
+  return hi;
+}
+#else  // portable implementation using uint64_t
+static inline uint64_t binary_fuse_mulhi(uint64_t a, uint64_t b) {
+  // Adapted from:
+  //  https://stackoverflow.com/a/51587262
+
+  /*
+        This is implementing schoolbook multiplication:
+
+                a1 a0
+        X       b1 b0
+        -------------
+                   00  LOW PART
+        -------------
+                00
+             10 10     MIDDLE PART
+        +       01
+        -------------
+             01
+        + 11 11        HIGH PART
+        -------------
+  */
+
+  const uint64_t a0 = (uint32_t) a;
+  const uint64_t a1 = a >> 32;
+  const uint64_t b0 = (uint32_t) b;
+  const uint64_t b1 = b >> 32;
+  const uint64_t p11 = a1 * b1;
+  const uint64_t p01 = a0 * b1;
+  const uint64_t p10 = a1 * b0;
+  const uint64_t p00 = a0 * b0;
+
+  // 64-bit product + two 32-bit values
+  const uint64_t middle = p10 + (p00 >> 32) + (uint32_t) p01;
+
+  /*
+    Proof that 64-bit products can accumulate two more 32-bit values
+    without overflowing:
+
+    Max 32-bit value is 2^32 - 1.
+    PSum = (2^32-1) * (2^32-1) + (2^32-1) + (2^32-1)
+         = 2^64 - 2^32 - 2^32 + 1 + 2^32 - 1 + 2^32 - 1
+         = 2^64 - 1
+    Therefore the high half below cannot overflow regardless of input.
+  */
+
+  // high half
+  return p11 + (middle >> 32) + (p01 >> 32);
+
+  // low half (which we don't care about, but here it is)
+  // (middle << 32) | (uint32_t) p00;
 }
 #endif
 
