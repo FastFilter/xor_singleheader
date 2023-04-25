@@ -60,6 +60,8 @@ typedef struct binary_fuse8_s {
   uint8_t *Fingerprints;
 } binary_fuse8_t;
 
+// #ifdefs adapted from:
+//  https://stackoverflow.com/a/50958815
 #ifdef __SIZEOF_INT128__  // compilers supporting __uint128, e.g., gcc, clang
 static inline uint64_t binary_fuse_mulhi(uint64_t a, uint64_t b) {
   return ((__uint128_t)a * b) >> 64;
@@ -78,7 +80,6 @@ static inline uint64_t binary_fuse_mulhi(uint64_t a, uint64_t b) {
 static inline uint64_t binary_fuse_mulhi(uint64_t a, uint64_t b) {
   // Adapted from:
   //  https://stackoverflow.com/a/51587262
-  //  https://stackoverflow.com/a/50958815
 
   /*
         This is implementing schoolbook multiplication:
