@@ -355,9 +355,9 @@ static inline bool binary_fuse8_populate(const uint64_t *keys, uint32_t size,
       error = (t2count[h2] < 4) ? 1 : error;
     }
     if(error) {
-      memset(reverseOrder, 0, sizeof(uint64_t[size]));
-      memset(t2count, 0, sizeof(uint8_t[capacity]));
-      memset(t2hash, 0, sizeof(uint64_t[capacity]));
+      memset(reverseOrder, 0, sizeof(uint64_t) * size);
+      memset(t2count, 0, sizeof(uint8_t) * capacity);
+      memset(t2hash, 0, sizeof(uint64_t) * capacity);
       filter->Seed = binary_fuse_rng_splitmix64(&rng_counter);
       continue;
     }
@@ -406,9 +406,9 @@ static inline bool binary_fuse8_populate(const uint64_t *keys, uint32_t size,
       size = stacksize;
       break;
     }
-    memset(reverseOrder, 0, sizeof(uint64_t[size]));
-    memset(t2count, 0, sizeof(uint8_t[capacity]));
-    memset(t2hash, 0, sizeof(uint64_t[capacity]));
+    memset(reverseOrder, 0, sizeof(uint64_t) * size);
+    memset(t2count, 0, sizeof(uint8_t) * capacity);
+    memset(t2hash, 0, sizeof(uint64_t) * capacity);
     filter->Seed = binary_fuse_rng_splitmix64(&rng_counter);
   }
 
@@ -639,9 +639,9 @@ static inline bool binary_fuse16_populate(const uint64_t *keys, uint32_t size,
       error = (t2count[h2] < 4) ? 1 : error;
     }
     if(error) {
-      memset(reverseOrder, 0, sizeof(uint64_t[size]));
-      memset(t2count, 0, sizeof(uint8_t[capacity]));
-      memset(t2hash, 0, sizeof(uint64_t[capacity]));
+      memset(reverseOrder, 0, sizeof(uint64_t) * size);
+      memset(t2count, 0, sizeof(uint8_t) * capacity);
+      memset(t2hash, 0, sizeof(uint64_t) * capacity);
       filter->Seed = binary_fuse_rng_splitmix64(&rng_counter);
       continue;
     }
@@ -690,9 +690,9 @@ static inline bool binary_fuse16_populate(const uint64_t *keys, uint32_t size,
       size = stacksize;
       break;
     }
-    memset(reverseOrder, 0, sizeof(uint64_t[size]));
-    memset(t2count, 0, sizeof(uint8_t[capacity]));
-    memset(t2hash, 0, sizeof(uint64_t[capacity]));
+    memset(reverseOrder, 0, sizeof(uint64_t) * size);
+    memset(t2count, 0, sizeof(uint8_t) * capacity);
+    memset(t2hash, 0, sizeof(uint64_t) * capacity);
     filter->Seed = binary_fuse_rng_splitmix64(&rng_counter);
   }
 
