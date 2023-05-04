@@ -421,7 +421,7 @@ static inline uint32_t xor_flushone_decrement_buffer(xor_setbuffer_t *buffer,
 
 // Construct the filter, returns true on success, false on failure.
 // The algorithm fails when there is insufficient memory.
-// The caller is responsable for calling binary_fuse8_allocate(size,filter)
+// The caller is responsable for calling xor8_allocate(size,filter)
 // before. For best performance, the caller should ensure that there are not too
 // many duplicated keys.
 static inline bool xor8_buffered_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
@@ -632,7 +632,7 @@ static inline bool xor8_buffered_populate(const uint64_t *keys, uint32_t size, x
 
 // Construct the filter, returns true on success, false on failure.
 // The algorithm fails when there is insufficient memory.
-// The caller is responsable for calling binary_fuse8_allocate(size,filter)
+// The caller is responsable for calling xor8_allocate(size,filter)
 // before. For best performance, the caller should ensure that there are not too
 // many duplicated keys.
 static inline bool xor8_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
@@ -839,7 +839,7 @@ static inline bool xor8_populate(const uint64_t *keys, uint32_t size, xor8_t *fi
 
 // Construct the filter, returns true on success, false on failure.
 // The algorithm fails when there is insufficient memory.
-// The caller is responsable for calling binary_fuse8_allocate(size,filter)
+// The caller is responsable for calling xor16_allocate(size,filter)
 // before. For best performance, the caller should ensure that there are not too
 // many duplicated keys.
 static inline bool xor16_buffered_populate(const uint64_t *keys, uint32_t size, xor16_t *filter) {
@@ -1053,7 +1053,7 @@ static inline bool xor16_buffered_populate(const uint64_t *keys, uint32_t size, 
 
 // Construct the filter, returns true on success, false on failure.
 // The algorithm fails when there is insufficient memory.
-// The caller is responsable for calling binary_fuse8_allocate(size,filter)
+// The caller is responsable for calling xor16_allocate(size,filter)
 // before. For best performance, the caller should ensure that there are not too
 // many duplicated keys.
 static inline bool xor16_populate(const uint64_t *keys, uint32_t size, xor16_t *filter) {
