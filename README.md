@@ -4,6 +4,7 @@
 
 Bloom filters are used to quickly check whether an element is part of a set.
 Xor filters and binary fuse filters are faster and more concise alternative to Bloom filters.
+Furthermore, unlike Bloom filters, xor and binary fuse filters are naturally compressible using standard techniques (gzip, zstd, etc.).
 They are also smaller than cuckoo filters. They are used in [production systems](https://github.com/datafuselabs/databend).
 
 * Thomas Mueller Graf, Daniel Lemire, [Binary Fuse Filters: Fast and Smaller Than Xor Filters](http://arxiv.org/abs/2201.01174), Journal of Experimental Algorithmics (to appear). DOI: 10.1145/3510449
