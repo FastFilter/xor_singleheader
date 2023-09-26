@@ -13,6 +13,22 @@
       // highly unlikely
 #endif
 
+static int binary_fuse_cmpfunc(const void * a, const void * b) {
+   return ( *(const uint64_t*)a - *(const uint64_t*)b );
+}
+
+static size_t binary_fuse_sort_and_remove_dup(uint64_t* keys, size_t length) {
+  qsort(keys, length, sizeof(uint64_t), binary_fuse_cmpfunc);
+  size_t j = 0;
+  for(size_t i = 1; i < length; i++) {
+    if(keys[i] != keys[i-1]) {
+      keys[j] = keys[i];
+      j++;
+    }
+  }
+  return j+1;
+}
+
 /**
  * We start with a few utilities.
  ***/
@@ -257,7 +273,7 @@ static inline uint8_t binary_fuse_mod3(uint8_t x) {
 // The caller is responsable for calling binary_fuse8_allocate(size,filter)
 // before. For best performance, the caller should ensure that there are not too
 // many duplicated keys.
-static inline bool binary_fuse8_populate(const uint64_t *keys, uint32_t size,
+static inline bool binary_fuse8_populate(uint64_t *keys, uint32_t size,
                            binary_fuse8_t *filter) {
   uint64_t rng_counter = 0x726b2b9d438b9d4d;
   filter->Seed = binary_fuse_rng_splitmix64(&rng_counter);
@@ -290,9 +306,7 @@ static inline bool binary_fuse8_populate(const uint64_t *keys, uint32_t size,
   for (int loop = 0; true; ++loop) {
     if (loop + 1 > XOR_MAX_ITERATIONS) {
       // The probability of this happening is lower than the
-      // the cosmic-ray probability (i.e., a cosmic ray corrupts your system),
-      // but if it happens, we just fill the fingerprint with ones which
-      // will flag all possible keys as 'possible', ensuring a correct result.
+      // the cosmic-ray probability (i.e., a cosmic ray corrupts your system)
       memset(filter->Fingerprints, ~0, filter->ArrayLength);
       free(alone);
       free(t2count);
@@ -300,7 +314,7 @@ static inline bool binary_fuse8_populate(const uint64_t *keys, uint32_t size,
       free(t2hash);
       free(reverseOrder);
       free(startPos);
-      return true;
+      return false;
     }
 
     for (uint32_t i = 0; i < block; i++) {
@@ -405,6 +419,8 @@ static inline bool binary_fuse8_populate(const uint64_t *keys, uint32_t size,
       // success
       size = stacksize;
       break;
+    } else if(duplicates > 0) {
+      size = binary_fuse_sort_and_remove_dup(keys, size);
     }
     memset(reverseOrder, 0, sizeof(uint64_t) * size);
     memset(t2count, 0, sizeof(uint8_t) * capacity);
@@ -541,7 +557,7 @@ static inline void binary_fuse16_free(binary_fuse16_t *filter) {
 // The caller is responsable for calling binary_fuse8_allocate(size,filter)
 // before. For best performance, the caller should ensure that there are not too
 // many duplicated keys.
-static inline bool binary_fuse16_populate(const uint64_t *keys, uint32_t size,
+static inline bool binary_fuse16_populate(uint64_t *keys, uint32_t size,
                            binary_fuse16_t *filter) {
   uint64_t rng_counter = 0x726b2b9d438b9d4d;
   filter->Seed = binary_fuse_rng_splitmix64(&rng_counter);
@@ -574,17 +590,14 @@ static inline bool binary_fuse16_populate(const uint64_t *keys, uint32_t size,
   for (int loop = 0; true; ++loop) {
     if (loop + 1 > XOR_MAX_ITERATIONS) {
       // The probability of this happening is lower than the
-      // the cosmic-ray probability (i.e., a cosmic ray corrupts your system),
-      // but if it happens, we just fill the fingerprint with ones which
-      // will flag all possible keys as 'possible', ensuring a correct result.
-      memset(filter->Fingerprints, ~0, filter->ArrayLength * sizeof(uint16_t));
+      // the cosmic-ray probability (i.e., a cosmic ray corrupts your system).
       free(alone);
       free(t2count);
       free(reverseH);
       free(t2hash);
       free(reverseOrder);
       free(startPos);
-      return true;
+      return false;
     }
 
     for (uint32_t i = 0; i < block; i++) {
@@ -689,6 +702,8 @@ static inline bool binary_fuse16_populate(const uint64_t *keys, uint32_t size,
       // success
       size = stacksize;
       break;
+    } else if(duplicates > 0) {
+      size = binary_fuse_sort_and_remove_dup(keys, size);
     }
     memset(reverseOrder, 0, sizeof(uint64_t) * size);
     memset(t2count, 0, sizeof(uint8_t) * capacity);

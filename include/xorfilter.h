@@ -7,10 +7,30 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef XOR_SORT_ITERATIONS
+#define XOR_SORT_ITERATIONS 10 // after 10 iterations, we sort and remove duplicates
+#endif
+
 #ifndef XOR_MAX_ITERATIONS
 #define XOR_MAX_ITERATIONS 100 // probabillity of success should always be > 0.5 so 100 iterations is highly unlikely
 #endif
 
+
+static int xor_cmpfunc(const void * a, const void * b) {
+   return ( *(const uint64_t*)a - *(const uint64_t*)b );
+}
+
+static size_t xor_sort_and_remove_dup(uint64_t* keys, size_t length) {
+  qsort(keys, length, sizeof(uint64_t), xor_cmpfunc);
+  size_t j = 0;
+  for(size_t i = 1; i < length; i++) {
+    if(keys[i] != keys[i-1]) {
+      keys[j] = keys[i];
+      j++;
+    }
+  }
+  return j+1;
+}
 /**
  * We assume that you have a large set of 64-bit integers
  * and you want a data structure to do membership tests using
@@ -424,7 +444,7 @@ static inline uint32_t xor_flushone_decrement_buffer(xor_setbuffer_t *buffer,
 // The caller is responsable for calling xor8_allocate(size,filter)
 // before. For best performance, the caller should ensure that there are not too
 // many duplicated keys.
-static inline bool xor8_buffered_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
+static inline bool xor8_buffered_populate(uint64_t *keys, uint32_t size, xor8_t *filter) {
   if(size == 0) { return false; }
   uint64_t rng_counter = 1;
   filter->seed = xor_rng_splitmix64(&rng_counter);
@@ -470,12 +490,12 @@ static inline bool xor8_buffered_populate(const uint64_t *keys, uint32_t size, x
 
   while (true) {
     iterations ++;
+    if(iterations == XOR_SORT_ITERATIONS) {
+      size = xor_sort_and_remove_dup(keys, size);
+    }
     if(iterations > XOR_MAX_ITERATIONS) {
       // The probability of this happening is lower than the
-      // the cosmic-ray probability (i.e., a cosmic ray corrupts your system),
-      // but if it happens, we just fill the fingerprint with ones which
-      // will flag all possible keys as 'possible', ensuring a correct result.
-      memset(filter->fingerprints, ~0,  3 * filter->blockLength);
+      // the cosmic-ray probability (i.e., a cosmic ray corrupts your system).
       xor_free_buffer(&buffer0);
       xor_free_buffer(&buffer1);
       xor_free_buffer(&buffer2);
@@ -635,7 +655,7 @@ static inline bool xor8_buffered_populate(const uint64_t *keys, uint32_t size, x
 // The caller is responsable for calling xor8_allocate(size,filter)
 // before. For best performance, the caller should ensure that there are not too
 // many duplicated keys.
-static inline bool xor8_populate(const uint64_t *keys, uint32_t size, xor8_t *filter) {
+static inline bool xor8_populate(uint64_t *keys, uint32_t size, xor8_t *filter) {
   if(size == 0) { return false; }
   uint64_t rng_counter = 1;
   filter->seed = xor_rng_splitmix64(&rng_counter);
@@ -668,12 +688,12 @@ static inline bool xor8_populate(const uint64_t *keys, uint32_t size, xor8_t *fi
 
   while (true) {
     iterations ++;
+    if(iterations == XOR_SORT_ITERATIONS) {
+      size = xor_sort_and_remove_dup(keys, size);
+    }
     if(iterations > XOR_MAX_ITERATIONS) {
       // The probability of this happening is lower than the
-      // the cosmic-ray probability (i.e., a cosmic ray corrupts your system),
-      // but if it happens, we just fill the fingerprint with ones which
-      // will flag all possible keys as 'possible', ensuring a correct result.
-      memset(filter->fingerprints, ~0, 3 * filter->blockLength);
+      // the cosmic-ray probability (i.e., a cosmic ray corrupts your system).
       free(sets);
       free(Q);
       free(stack);
@@ -842,7 +862,7 @@ static inline bool xor8_populate(const uint64_t *keys, uint32_t size, xor8_t *fi
 // The caller is responsable for calling xor16_allocate(size,filter)
 // before. For best performance, the caller should ensure that there are not too
 // many duplicated keys.
-static inline bool xor16_buffered_populate(const uint64_t *keys, uint32_t size, xor16_t *filter) {
+static inline bool xor16_buffered_populate(uint64_t *keys, uint32_t size, xor16_t *filter) {
   if(size == 0) { return false; }
   uint64_t rng_counter = 1;
   filter->seed = xor_rng_splitmix64(&rng_counter);
@@ -888,12 +908,12 @@ static inline bool xor16_buffered_populate(const uint64_t *keys, uint32_t size, 
 
   while (true) {
     iterations ++;
+    if(iterations == XOR_SORT_ITERATIONS) {
+      size = xor_sort_and_remove_dup(keys, size);
+    }
     if(iterations > XOR_MAX_ITERATIONS) {
       // The probability of this happening is lower than the
-      // the cosmic-ray probability (i.e., a cosmic ray corrupts your system),
-      // but if it happens, we just fill the fingerprint with ones which
-      // will flag all possible keys as 'possible', ensuring a correct result.
-      memset(filter->fingerprints, ~0, 3 * filter->blockLength * sizeof(uint16_t));
+      // the cosmic-ray probability (i.e., a cosmic ray corrupts your system)é
       xor_free_buffer(&buffer0);
       xor_free_buffer(&buffer1);
       xor_free_buffer(&buffer2);
@@ -1056,7 +1076,7 @@ static inline bool xor16_buffered_populate(const uint64_t *keys, uint32_t size, 
 // The caller is responsable for calling xor16_allocate(size,filter)
 // before. For best performance, the caller should ensure that there are not too
 // many duplicated keys.
-static inline bool xor16_populate(const uint64_t *keys, uint32_t size, xor16_t *filter) {
+static inline bool xor16_populate(uint64_t *keys, uint32_t size, xor16_t *filter) {
   if(size == 0) { return false; }
   uint64_t rng_counter = 1;
   filter->seed = xor_rng_splitmix64(&rng_counter);
@@ -1090,16 +1110,16 @@ static inline bool xor16_populate(const uint64_t *keys, uint32_t size, xor16_t *
 
   while (true) {
     iterations ++;
+    if(iterations == XOR_SORT_ITERATIONS) {
+      size = xor_sort_and_remove_dup(keys, size);
+    }
     if(iterations > XOR_MAX_ITERATIONS) {
       // The probability of this happening is lower than the
-      // the cosmic-ray probability (i.e., a cosmic ray corrupts your system),
-      // but if it happens, we just fill the fingerprint with ones which
-      // will flag all possible keys as 'possible', ensuring a correct result.
-      memset(filter->fingerprints, ~0, 3 * filter->blockLength * sizeof(uint16_t));
+      // the cosmic-ray probability (i.e., a cosmic ray corrupts your system).
       free(sets);
       free(Q);
       free(stack);
-      return true;
+      return false;
     }
 
     memset(sets, 0, sizeof(xor_xorset_t) * arrayLength);
