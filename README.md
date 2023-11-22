@@ -54,6 +54,21 @@ about 0.0015%. The type is `binary_fuse16_t` and you may use it with
 functions such as `binary_fuse16_allocate`, `binary_fuse16_populate`,
 `binary_fuse8_contain` and `binary_fuse8_free`.
 
+You may serialize the data as follows:
+
+```C
+  size_t buffer_size = binary_fuse16_serialization_bytes(&filter);
+  char *buffer = (char*)malloc(buffer_size);
+  binary_fuse16_serialize(&filter, buffer);
+  binary_fuse16_free(&filter);
+  binary_fuse16_deserialize(&filter, buffer);
+  free(buffer);
+```
+
+The serialization does not handle endianess: it is expected that you will serialize
+and deserialize on the little endian systems. (Big endian systems are vanishingly rare.)
+
+
 ## C++ wrapper
 
 If you want a C++ version, you can roll your own:

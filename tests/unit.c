@@ -63,6 +63,13 @@ bool testxor8(size_t size) {
     }
   }
 
+  size_t buffer_size = xor8_serialization_bytes(&filter);
+  char *buffer = (char*)malloc(buffer_size);
+  xor8_serialize(&filter, buffer);
+  xor8_free(&filter);
+  xor8_deserialize(&filter, buffer);
+  free(buffer);
+
   size_t random_matches = 0;
   size_t trials = 10000000;
   for (size_t i = 0; i < trials; i++) {
@@ -101,6 +108,13 @@ bool testxor16(size_t size) {
       return false;
     }
   }
+
+  size_t buffer_size = xor16_serialization_bytes(&filter);
+  char *buffer = (char*)malloc(buffer_size);
+  xor16_serialize(&filter, buffer);
+  xor16_free(&filter);
+  xor16_deserialize(&filter, buffer);
+  free(buffer);
 
   size_t random_matches = 0;
   size_t trials = 10000000;
@@ -142,6 +156,13 @@ bool testbufferedxor16(size_t size) {
     }
   }
 
+  size_t buffer_size = xor16_serialization_bytes(&filter);
+  char *buffer = (char*)malloc(buffer_size);
+  xor16_serialize(&filter, buffer);
+  xor16_free(&filter);
+  xor16_deserialize(&filter, buffer);
+  free(buffer);
+
   size_t random_matches = 0;
   size_t trials = 10000000;
   for (size_t i = 0; i < trials; i++) {
@@ -180,6 +201,13 @@ bool testbinaryfuse8(size_t size) {
       return false;
     }
   }
+
+  size_t buffer_size = binary_fuse8_serialization_bytes(&filter);
+  char *buffer = (char*)malloc(buffer_size);
+  binary_fuse8_serialize(&filter, buffer);
+  binary_fuse8_free(&filter);
+  binary_fuse8_deserialize(&filter, buffer);
+  free(buffer);
 
   size_t random_matches = 0;
   size_t trials = 10000000;
@@ -221,6 +249,13 @@ bool testbinaryfuse16(size_t size) {
       return false;
     }
   }
+
+  size_t buffer_size = binary_fuse16_serialization_bytes(&filter);
+  char *buffer = (char*)malloc(buffer_size);
+  binary_fuse16_serialize(&filter, buffer);
+  binary_fuse16_free(&filter);
+  binary_fuse16_deserialize(&filter, buffer);
+  free(buffer);
 
   size_t random_matches = 0;
   size_t trials = 10000000;

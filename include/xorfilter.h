@@ -1280,4 +1280,76 @@ static inline bool xor16_populate(uint64_t *keys, uint32_t size, xor16_t *filter
 
 
 
+  uint64_t seed;
+  uint64_t blockLength;
+static inline size_t xor16_serialization_bytes(xor16_t *filter) {
+  return sizeof(filter->seed) + sizeof(filter->blockLength) +
+        sizeof(uint16_t) * 3 * filter->blockLength;
+}
+
+static inline size_t xor8_serialization_bytes(const xor8_t *filter) {
+  return sizeof(filter->seed) + sizeof(filter->blockLength) +
+        sizeof(uint8_t) * 3 * filter->blockLength;
+}
+
+// serialize a filter to a buffer, the buffer should have a capacity of at least
+// xor16_serialization_bytes(filter) bytes.
+// Native endianess only.
+static inline void xor16_serialize(const xor16_t *filter, char *buffer) {
+  memcpy(buffer, &filter->seed, sizeof(filter->seed));
+  buffer += sizeof(filter->seed);
+  memcpy(buffer, &filter->blockLength, sizeof(filter->blockLength));
+  buffer += sizeof(filter->blockLength);
+  memcpy(buffer, filter->fingerprints, sizeof(filter->blockLength) * 3 * sizeof(uint16_t));
+}
+
+// serialize a filter to a buffer, the buffer should have a capacity of at least
+// xor8_serialization_bytes(filter) bytes.
+// Native endianess only.
+static inline void xor8_serialize(const xor8_t *filter, char *buffer) {
+  memcpy(buffer, &filter->seed, sizeof(filter->seed));
+  buffer += sizeof(filter->seed);
+  memcpy(buffer, &filter->blockLength, sizeof(filter->blockLength));
+  buffer += sizeof(filter->blockLength);
+  memcpy(buffer, filter->fingerprints, sizeof(filter->blockLength) * 3 * sizeof(uint8_t));
+}
+
+// deserialize a filter from a buffer, returns true on success, false on failure.
+// The output will be reallocated, so the caller should call xor16_free(filter) before
+// if the filter was already allocated. The caller needs to call xor16_free(filter) after.
+// The number of bytes read is xor16_serialization_bytes(filter).
+// Native endianess only.
+static inline bool xor16_deserialize(xor16_t * filter, const char *buffer) {
+  memcpy(&filter->seed, buffer, sizeof(filter->seed));
+  buffer += sizeof(filter->seed);
+  memcpy(&filter->blockLength, buffer, sizeof(filter->blockLength));
+  buffer += sizeof(filter->blockLength);
+  filter->fingerprints = (uint16_t*)malloc(filter->blockLength * 3 * sizeof(uint16_t));
+  if(filter->fingerprints == NULL) {
+    return false;
+  }
+  memcpy(filter->fingerprints, buffer, sizeof(filter->blockLength) * 3 * sizeof(uint16_t));
+  return true;
+}
+
+
+// deserialize a filter from a buffer, returns true on success, false on failure.
+// The output will be reallocated, so the caller should call xor8_free(filter) before
+// if the filter was already allocated. The caller needs to call xor8_free(filter) after.
+// The number of bytes read is xor8_serialization_bytes(filter).
+// Native endianess only.
+static inline bool xor8_deserialize(xor8_t * filter, const char *buffer) {
+  memcpy(&filter->seed, buffer, sizeof(filter->seed));
+  buffer += sizeof(filter->seed);
+  memcpy(&filter->blockLength, buffer, sizeof(filter->blockLength));
+  buffer += sizeof(filter->blockLength);
+  filter->fingerprints = (uint8_t*)malloc(filter->blockLength * 3 * sizeof(uint8_t));
+  if(filter->fingerprints == NULL) {
+    return false;
+  }
+  memcpy(filter->fingerprints, buffer, sizeof(filter->blockLength) * 3 * sizeof(uint8_t));
+  return true;
+}
+
+
 #endif

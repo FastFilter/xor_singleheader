@@ -734,7 +734,103 @@ static inline bool binary_fuse16_populate(uint64_t *keys, uint32_t size,
   return true;
 }
 
+static inline size_t binary_fuse16_serialization_bytes(binary_fuse16_t *filter) {
+  return sizeof(filter->Seed) + sizeof(filter->SegmentLength) +
+        sizeof(filter->SegmentLengthMask) + sizeof(filter->SegmentCount) +
+        sizeof(filter->SegmentCountLength) + sizeof(filter->ArrayLength) +
+        sizeof(uint16_t) * filter->ArrayLength;
+}
+
+static inline size_t binary_fuse8_serialization_bytes(const binary_fuse8_t *filter) {
+  return sizeof(filter->Seed) + sizeof(filter->SegmentLength) +
+   sizeof(filter->SegmentCount) +
+        sizeof(filter->SegmentCountLength) + sizeof(filter->ArrayLength) +
+        sizeof(uint8_t) * filter->ArrayLength;
+}
+
+// serialize a filter to a buffer, the buffer should have a capacity of at least
+// binary_fuse16_serialization_bytes(filter) bytes.
+// Native endianess only.
+static inline void binary_fuse16_serialize(const binary_fuse16_t *filter, char *buffer) {
+  memcpy(buffer, &filter->Seed, sizeof(filter->Seed));
+  buffer += sizeof(filter->Seed);
+  memcpy(buffer, &filter->SegmentLength, sizeof(filter->SegmentLength));
+  buffer += sizeof(filter->SegmentLength);
+  memcpy(buffer, &filter->SegmentCount, sizeof(filter->SegmentCount));
+  buffer += sizeof(filter->SegmentCount);
+  memcpy(buffer, &filter->SegmentCountLength, sizeof(filter->SegmentCountLength));
+  buffer += sizeof(filter->SegmentCountLength);
+  memcpy(buffer, &filter->ArrayLength, sizeof(filter->ArrayLength));
+  buffer += sizeof(filter->ArrayLength);
+  memcpy(buffer, filter->Fingerprints, sizeof(filter->ArrayLength) * sizeof(uint16_t));
+}
+
+// serialize a filter to a buffer, the buffer should have a capacity of at least
+// binary_fuse8_serialization_bytes(filter) bytes.
+// Native endianess only.
+static inline void binary_fuse8_serialize(const binary_fuse8_t *filter, char *buffer) {
+  memcpy(buffer, &filter->Seed, sizeof(filter->Seed));
+  buffer += sizeof(filter->Seed);
+  memcpy(buffer, &filter->SegmentLength, sizeof(filter->SegmentLength));
+  buffer += sizeof(filter->SegmentLength);
+  memcpy(buffer, &filter->SegmentCount, sizeof(filter->SegmentCount));
+  buffer += sizeof(filter->SegmentCount);
+  memcpy(buffer, &filter->SegmentCountLength, sizeof(filter->SegmentCountLength));
+  buffer += sizeof(filter->SegmentCountLength);
+  memcpy(buffer, &filter->ArrayLength, sizeof(filter->ArrayLength));
+  buffer += sizeof(filter->ArrayLength);
+  memcpy(buffer, filter->Fingerprints, sizeof(filter->ArrayLength) * sizeof(uint8_t));
+}
+
+// deserialize a filter from a buffer, returns true on success, false on failure.
+// The output will be reallocated, so the caller should call binary_fuse16_free(filter) before
+// if the filter was already allocated. The caller needs to call binary_fuse16_free(filter) after.
+// The number of bytes read is binary_fuse16_serialization_bytes(output).
+// Native endianess only.
+static inline bool binary_fuse16_deserialize(binary_fuse16_t * filter, const char *buffer) {
+  memcpy(&filter->Seed, buffer, sizeof(filter->Seed));
+  buffer += sizeof(filter->Seed);
+  memcpy(&filter->SegmentLength, buffer, sizeof(filter->SegmentLength));
+  buffer += sizeof(filter->SegmentLength);
+  filter->SegmentLengthMask = filter->SegmentLength - 1;
+  memcpy(&filter->SegmentCount, buffer, sizeof(filter->SegmentCount));
+  buffer += sizeof(filter->SegmentCount);
+  memcpy(&filter->SegmentCountLength, buffer, sizeof(filter->SegmentCountLength));
+  buffer += sizeof(filter->SegmentCountLength);
+  memcpy(&filter->ArrayLength, buffer, sizeof(filter->ArrayLength));
+  buffer += sizeof(filter->ArrayLength);
+  filter->Fingerprints = (uint16_t*)malloc(filter->ArrayLength * sizeof(uint16_t));
+  if(filter->Fingerprints == NULL) {
+    return false;
+  }
+  memcpy(filter->Fingerprints, buffer, sizeof(filter->ArrayLength) * sizeof(uint16_t));
+  return true;
+}
 
 
+// deserialize a filter from a buffer, returns true on success, false on failure.
+// The output will be reallocated, so the caller should call binary_fuse8_free(filter) before
+// if the filter was already allocated. The caller needs to call binary_fuse8_free(filter) after.
+// The number of bytes read is binary_fuse8_serialization_bytes(output).
+// Native endianess only.
+static inline bool binary_fuse8_deserialize(binary_fuse8_t * filter, const char *buffer) {
+  memcpy(&filter->Seed, buffer, sizeof(filter->Seed));
+  buffer += sizeof(filter->Seed);
+  memcpy(&filter->SegmentLength, buffer, sizeof(filter->SegmentLength));
+  buffer += sizeof(filter->SegmentLength);
+  filter->SegmentLengthMask = filter->SegmentLength - 1;
+  memcpy(&filter->SegmentCount, buffer, sizeof(filter->SegmentCount));
+  buffer += sizeof(filter->SegmentCount);
+  memcpy(&filter->SegmentCountLength, buffer, sizeof(filter->SegmentCountLength));
+  buffer += sizeof(filter->SegmentCountLength);
+  memcpy(&filter->ArrayLength, buffer, sizeof(filter->ArrayLength));
+  buffer += sizeof(filter->ArrayLength);
+  filter->Fingerprints = (uint8_t*)malloc(filter->ArrayLength * sizeof(uint8_t));
+  if(filter->Fingerprints == NULL) {
+    return false;
+  }
+  memcpy(filter->Fingerprints, buffer, sizeof(filter->ArrayLength) * sizeof(uint8_t));
+  return true;
+}
 
 #endif
