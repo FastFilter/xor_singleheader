@@ -1279,9 +1279,6 @@ static inline bool xor16_populate(uint64_t *keys, uint32_t size, xor16_t *filter
 }
 
 
-
-  uint64_t seed;
-  uint64_t blockLength;
 static inline size_t xor16_serialization_bytes(xor16_t *filter) {
   return sizeof(filter->seed) + sizeof(filter->blockLength) +
         sizeof(uint16_t) * 3 * filter->blockLength;
