@@ -88,7 +88,7 @@ public:
     }
 
     bool AddAll(const uint64_t* data, const size_t start, const size_t end) {
-        return xor8_buffered_populate(data + start, end - start, &filter);
+        return binary_fuse8_populate(data + start, end - start, &filter);
     }
     inline bool Contain(uint64_t &item) const {
         return binary_fuse8_contain(item, &filter);
