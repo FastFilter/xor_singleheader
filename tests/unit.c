@@ -69,6 +69,12 @@ bool testxor8(size_t size) {
   xor8_free(&filter);
   xor8_deserialize(&filter, buffer);
   free(buffer);
+  for (size_t i = 0; i < size; i++) {
+    if (!xor8_contain(big_set[i], &filter)) {
+      printf("bug!\n");
+      return false;
+    }
+  }
 
   size_t random_matches = 0;
   size_t trials = 10000000;
@@ -115,6 +121,12 @@ bool testxor16(size_t size) {
   xor16_free(&filter);
   xor16_deserialize(&filter, buffer);
   free(buffer);
+  for (size_t i = 0; i < size; i++) {
+    if (!xor16_contain(big_set[i], &filter)) {
+      printf("bug!\n");
+      return false;
+    }
+  }
 
   size_t random_matches = 0;
   size_t trials = 10000000;
@@ -162,6 +174,12 @@ bool testbufferedxor16(size_t size) {
   xor16_free(&filter);
   xor16_deserialize(&filter, buffer);
   free(buffer);
+  for (size_t i = 0; i < size; i++) {
+    if (!xor16_contain(big_set[i], &filter)) {
+      printf("bug!\n");
+      return false;
+    }
+  }
 
   size_t random_matches = 0;
   size_t trials = 10000000;
@@ -208,6 +226,12 @@ bool testbinaryfuse8(size_t size) {
   binary_fuse8_free(&filter);
   binary_fuse8_deserialize(&filter, buffer);
   free(buffer);
+  for (size_t i = 0; i < size; i++) {
+    if (!binary_fuse8_contain(big_set[i], &filter)) {
+      printf("bug!\n");
+      return false;
+    }
+  }
 
   size_t random_matches = 0;
   size_t trials = 10000000;
@@ -256,6 +280,12 @@ bool testbinaryfuse16(size_t size) {
   binary_fuse16_free(&filter);
   binary_fuse16_deserialize(&filter, buffer);
   free(buffer);
+  for (size_t i = 0; i < size; i++) {
+    if (!binary_fuse16_contain(big_set[i], &filter)) {
+      printf("bug!\n");
+      return false;
+    }
+  }
 
   size_t random_matches = 0;
   size_t trials = 10000000;

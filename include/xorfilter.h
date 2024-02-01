@@ -1297,7 +1297,7 @@ static inline void xor16_serialize(const xor16_t *filter, char *buffer) {
   buffer += sizeof(filter->seed);
   memcpy(buffer, &filter->blockLength, sizeof(filter->blockLength));
   buffer += sizeof(filter->blockLength);
-  memcpy(buffer, filter->fingerprints, sizeof(filter->blockLength) * 3 * sizeof(uint16_t));
+  memcpy(buffer, filter->fingerprints, filter->blockLength * 3 * sizeof(uint16_t));
 }
 
 // serialize a filter to a buffer, the buffer should have a capacity of at least
@@ -1308,7 +1308,7 @@ static inline void xor8_serialize(const xor8_t *filter, char *buffer) {
   buffer += sizeof(filter->seed);
   memcpy(buffer, &filter->blockLength, sizeof(filter->blockLength));
   buffer += sizeof(filter->blockLength);
-  memcpy(buffer, filter->fingerprints, sizeof(filter->blockLength) * 3 * sizeof(uint8_t));
+  memcpy(buffer, filter->fingerprints, filter->blockLength * 3 * sizeof(uint8_t));
 }
 
 // deserialize a filter from a buffer, returns true on success, false on failure.
@@ -1325,7 +1325,7 @@ static inline bool xor16_deserialize(xor16_t * filter, const char *buffer) {
   if(filter->fingerprints == NULL) {
     return false;
   }
-  memcpy(filter->fingerprints, buffer, sizeof(filter->blockLength) * 3 * sizeof(uint16_t));
+  memcpy(filter->fingerprints, buffer, filter->blockLength * 3 * sizeof(uint16_t));
   return true;
 }
 
@@ -1344,7 +1344,7 @@ static inline bool xor8_deserialize(xor8_t * filter, const char *buffer) {
   if(filter->fingerprints == NULL) {
     return false;
   }
-  memcpy(filter->fingerprints, buffer, sizeof(filter->blockLength) * 3 * sizeof(uint8_t));
+  memcpy(filter->fingerprints, buffer, filter->blockLength * 3 * sizeof(uint8_t));
   return true;
 }
 

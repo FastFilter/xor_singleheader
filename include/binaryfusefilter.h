@@ -762,7 +762,7 @@ static inline void binary_fuse16_serialize(const binary_fuse16_t *filter, char *
   buffer += sizeof(filter->SegmentCountLength);
   memcpy(buffer, &filter->ArrayLength, sizeof(filter->ArrayLength));
   buffer += sizeof(filter->ArrayLength);
-  memcpy(buffer, filter->Fingerprints, sizeof(filter->ArrayLength) * sizeof(uint16_t));
+  memcpy(buffer, filter->Fingerprints, filter->ArrayLength * sizeof(uint16_t));
 }
 
 // serialize a filter to a buffer, the buffer should have a capacity of at least
@@ -779,7 +779,7 @@ static inline void binary_fuse8_serialize(const binary_fuse8_t *filter, char *bu
   buffer += sizeof(filter->SegmentCountLength);
   memcpy(buffer, &filter->ArrayLength, sizeof(filter->ArrayLength));
   buffer += sizeof(filter->ArrayLength);
-  memcpy(buffer, filter->Fingerprints, sizeof(filter->ArrayLength) * sizeof(uint8_t));
+  memcpy(buffer, filter->Fingerprints, filter->ArrayLength * sizeof(uint8_t));
 }
 
 // deserialize a filter from a buffer, returns true on success, false on failure.
@@ -803,7 +803,7 @@ static inline bool binary_fuse16_deserialize(binary_fuse16_t * filter, const cha
   if(filter->Fingerprints == NULL) {
     return false;
   }
-  memcpy(filter->Fingerprints, buffer, sizeof(filter->ArrayLength) * sizeof(uint16_t));
+  memcpy(filter->Fingerprints, buffer, filter->ArrayLength * sizeof(uint16_t));
   return true;
 }
 
@@ -829,7 +829,7 @@ static inline bool binary_fuse8_deserialize(binary_fuse8_t * filter, const char 
   if(filter->Fingerprints == NULL) {
     return false;
   }
-  memcpy(filter->Fingerprints, buffer, sizeof(filter->ArrayLength) * sizeof(uint8_t));
+  memcpy(filter->Fingerprints, buffer, filter->ArrayLength * sizeof(uint8_t));
   return true;
 }
 
