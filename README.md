@@ -74,7 +74,7 @@ and deserialize on the little endian systems. (Big endian systems are vanishingl
 If you want a C++ version, you can roll your own:
 
 ```C++
-#include "xorfilter.h"
+#include "binaryfusefilter.h"
 
 class BinaryFuse {
 public:
@@ -87,7 +87,7 @@ public:
         binary_fuse8_free(&filter);
     }
 
-    bool AddAll(const uint64_t* data, const size_t start, const size_t end) {
+    bool AddAll(uint64_t* data, const size_t start, const size_t end) {
         return binary_fuse8_populate(data + start, end - start, &filter);
     }
     inline bool Contain(uint64_t &item) const {
@@ -97,7 +97,7 @@ public:
         return binary_fuse8_size_in_bytes(&filter);
     }
     BinaryFuse(BinaryFuse && o) : filter(o.filter)  {
-        o.filter.fingerprints = nullptr; // we take ownership for the data
+        o.filter.Fingerprints = nullptr; // we take ownership for the data
     }
     binary_fuse8_t filter;
 
