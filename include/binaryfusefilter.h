@@ -19,14 +19,14 @@ static int binary_fuse_cmpfunc(const void * a, const void * b) {
 
 static size_t binary_fuse_sort_and_remove_dup(uint64_t* keys, size_t length) {
   qsort(keys, length, sizeof(uint64_t), binary_fuse_cmpfunc);
-  size_t j = 0;
+  size_t j = 1;
   for(size_t i = 1; i < length; i++) {
     if(keys[i] != keys[i-1]) {
       keys[j] = keys[i];
       j++;
     }
   }
-  return j+1;
+  return j;
 }
 
 /**
