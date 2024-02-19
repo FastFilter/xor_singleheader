@@ -22,14 +22,14 @@ static int xor_cmpfunc(const void * a, const void * b) {
 
 static size_t xor_sort_and_remove_dup(uint64_t* keys, size_t length) {
   qsort(keys, length, sizeof(uint64_t), xor_cmpfunc);
-  size_t j = 0;
+  size_t j = 1;
   for(size_t i = 1; i < length; i++) {
     if(keys[i] != keys[i-1]) {
       keys[j] = keys[i];
       j++;
     }
   }
-  return j+1;
+  return j;
 }
 /**
  * We assume that you have a large set of 64-bit integers
