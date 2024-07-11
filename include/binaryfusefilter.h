@@ -243,7 +243,8 @@ static inline bool binary_fuse8_allocate(uint32_t size,
   filter->ArrayLength =
       (filter->SegmentCount + arity - 1) * filter->SegmentLength;
   filter->SegmentCountLength = filter->SegmentCount * filter->SegmentLength;
-  filter->Fingerprints = (uint8_t*)malloc(filter->ArrayLength);
+  filter->Fingerprints =
+      (uint8_t *)calloc(filter->ArrayLength, sizeof(uint8_t));
   return filter->Fingerprints != NULL;
 }
 
@@ -530,7 +531,8 @@ static inline bool binary_fuse16_allocate(uint32_t size,
   filter->ArrayLength =
       (filter->SegmentCount + arity - 1) * filter->SegmentLength;
   filter->SegmentCountLength = filter->SegmentCount * filter->SegmentLength;
-  filter->Fingerprints = (uint16_t*)malloc(filter->ArrayLength * sizeof(uint16_t));
+  filter->Fingerprints =
+      (uint16_t *)calloc(filter->ArrayLength, sizeof(uint16_t));
   return filter->Fingerprints != NULL;
 }
 
