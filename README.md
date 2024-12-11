@@ -71,7 +71,10 @@ and deserialize on the little endian systems. (Big endian systems are vanishingl
 
 ## C++ wrapper
 
-If you want a C++ version, you can roll your own:
+If you want a C++ version, we recommend [binfuse](https://github.com/oschonrock/binfuse) by Oliver Schönrock.
+
+
+You can also roll your own:
 
 ```C++
 #include "binaryfusefilter.h"
