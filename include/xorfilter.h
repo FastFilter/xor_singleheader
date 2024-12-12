@@ -17,7 +17,7 @@
 
 
 static int xor_cmpfunc(const void * a, const void * b) {
-   return ( *(const uint64_t*)a - *(const uint64_t*)b );
+  return (int)( *(const uint64_t*)a - *(const uint64_t*)b );
 }
 
 static size_t xor_sort_and_remove_dup(uint64_t* keys, size_t length) {
@@ -43,11 +43,11 @@ static size_t xor_sort_and_remove_dup(uint64_t* keys, size_t length) {
  * We start with a few utilities.
  ***/
 static inline uint64_t xor_murmur64(uint64_t h) {
-  h ^= h >> 33;
+  h ^= h >> 33U;
   h *= UINT64_C(0xff51afd7ed558ccd);
-  h ^= h >> 33;
+  h ^= h >> 33U;
   h *= UINT64_C(0xc4ceb9fe1a85ec53);
-  h ^= h >> 33;
+  h ^= h >> 33U;
   return h;
 }
 
@@ -56,16 +56,16 @@ static inline uint64_t xor_mix_split(uint64_t key, uint64_t seed) {
 }
 
 static inline uint64_t xor_rotl64(uint64_t n, unsigned int c) {
-  return (n << (c & 63)) | (n >> ((-c) & 63));
+  return (n << (c & 63U)) | (n >> ((-c) & 63U));
 }
 
 static inline uint32_t xor_reduce(uint32_t hash, uint32_t n) {
   // http://lemire.me/blog/2016/06/27/a-fast-alternative-to-the-modulo-reduction/
-  return (uint32_t)(((uint64_t)hash * n) >> 32);
+  return (uint32_t)(((uint64_t)hash * n) >> 32U);
 }
 
 static inline uint64_t xor_fingerprint(uint64_t hash) {
-  return hash ^ (hash >> 32);
+  return hash ^ (hash >> 32U);
 }
 
 /**
@@ -75,9 +75,9 @@ static inline uint64_t xor_fingerprint(uint64_t hash) {
 // returns random number, modifies the seed
 static inline uint64_t xor_rng_splitmix64(uint64_t *seed) {
   uint64_t z = (*seed += UINT64_C(0x9E3779B97F4A7C15));
-  z = (z ^ (z >> 30)) * UINT64_C(0xBF58476D1CE4E5B9);
-  z = (z ^ (z >> 27)) * UINT64_C(0x94D049BB133111EB);
-  return z ^ (z >> 31);
+  z = (z ^ (z >> 30U)) * UINT64_C(0xBF58476D1CE4E5B9);
+  z = (z ^ (z >> 27U)) * UINT64_C(0x94D049BB133111EB);
+  return z ^ (z >> 31U);
 }
 
 /**
@@ -94,15 +94,16 @@ typedef struct xor8_s {
 // Report if the key is in the set, with false positive rate.
 static inline bool xor8_contain(uint64_t key, const xor8_t *filter) {
   uint64_t hash = xor_mix_split(key, filter->seed);
-  uint8_t f = xor_fingerprint(hash);
+  uint8_t f = (uint8_t)xor_fingerprint(hash);
   uint32_t r0 = (uint32_t)hash;
   uint32_t r1 = (uint32_t)xor_rotl64(hash, 21);
   uint32_t r2 = (uint32_t)xor_rotl64(hash, 42);
-  uint32_t h0 = xor_reduce(r0, filter->blockLength);
-  uint32_t h1 = xor_reduce(r1, filter->blockLength) + filter->blockLength;
-  uint32_t h2 = xor_reduce(r2, filter->blockLength) + 2 * filter->blockLength;
-  return f == (filter->fingerprints[h0] ^ filter->fingerprints[h1] ^
-       filter->fingerprints[h2]);
+  uint32_t h0 = xor_reduce(r0, (uint32_t)filter->blockLength);
+  uint32_t h1 = xor_reduce(r1, (uint32_t)filter->blockLength) + (uint32_t)filter->blockLength;
+  uint32_t h2 = xor_reduce(r2, (uint32_t)filter->blockLength) + 2 * (uint32_t)filter->blockLength;
+  return f == ((uint32_t)filter->fingerprints[h0] ^
+               filter->fingerprints[h1] ^
+               filter->fingerprints[h2]);
 }
 
 typedef struct xor16_s {
@@ -115,43 +116,42 @@ typedef struct xor16_s {
 // Report if the key is in the set, with false positive rate.
 static inline bool xor16_contain(uint64_t key, const xor16_t *filter) {
   uint64_t hash = xor_mix_split(key, filter->seed);
-  uint16_t f = xor_fingerprint(hash);
+  uint16_t f = (uint16_t)xor_fingerprint(hash);
   uint32_t r0 = (uint32_t)hash;
   uint32_t r1 = (uint32_t)xor_rotl64(hash, 21);
   uint32_t r2 = (uint32_t)xor_rotl64(hash, 42);
-  uint32_t h0 = xor_reduce(r0, filter->blockLength);
-  uint32_t h1 = xor_reduce(r1, filter->blockLength) + filter->blockLength;
-  uint32_t h2 = xor_reduce(r2, filter->blockLength) + 2 * filter->blockLength;
-  return f == (filter->fingerprints[h0] ^ filter->fingerprints[h1] ^
-       filter->fingerprints[h2]);
+  uint32_t h0 = xor_reduce(r0, (uint32_t)filter->blockLength);
+  uint32_t h1 = xor_reduce(r1, (uint32_t)filter->blockLength) + (uint32_t)filter->blockLength;
+  uint32_t h2 = xor_reduce(r2, (uint32_t)filter->blockLength) + 2 * (uint32_t)filter->blockLength;
+  return f == ((uint32_t)filter->fingerprints[h0] ^
+               filter->fingerprints[h1] ^
+               filter->fingerprints[h2]);
 }
 
 // allocate enough capacity for a set containing up to 'size' elements
 // caller is responsible to call xor8_free(filter)
 static inline bool xor8_allocate(uint32_t size, xor8_t *filter) {
-  size_t capacity = 32 + 1.23 * size;
+  size_t capacity = (size_t)(32 + 1.23 * size);
   capacity = capacity / 3 * 3;
   filter->fingerprints = (uint8_t *)malloc(capacity * sizeof(uint8_t));
   if (filter->fingerprints != NULL) {
     filter->blockLength = capacity / 3;
     return true;
-  } else {
-    return false;
   }
+  return false;
 }
 
 // allocate enough capacity for a set containing up to 'size' elements
 // caller is responsible to call xor16_free(filter)
 static inline bool xor16_allocate(uint32_t size, xor16_t *filter) {
-  size_t capacity = 32 + 1.23 * size;
+  size_t capacity = (size_t)(32 + 1.23 * size);
   capacity = capacity / 3 * 3;
   filter->fingerprints = (uint16_t *)malloc(capacity * sizeof(uint16_t));
   if (filter->fingerprints != NULL) {
     filter->blockLength = capacity / 3;
     return true;
-  } else {
-    return false;
-  }
+  } 
+  return false;
 }
 
 // report memory usage
@@ -202,9 +202,9 @@ static inline xor_hashes_t xor8_get_h0_h1_h2(uint64_t k, const xor8_t *filter) {
   uint32_t r1 = (uint32_t)xor_rotl64(hash, 21);
   uint32_t r2 = (uint32_t)xor_rotl64(hash, 42);
 
-  answer.h0 = xor_reduce(r0, filter->blockLength);
-  answer.h1 = xor_reduce(r1, filter->blockLength);
-  answer.h2 = xor_reduce(r2, filter->blockLength);
+  answer.h0 = xor_reduce(r0, (uint32_t)filter->blockLength);
+  answer.h1 = xor_reduce(r1, (uint32_t)filter->blockLength);
+  answer.h2 = xor_reduce(r2, (uint32_t)filter->blockLength);
   return answer;
 }
 
@@ -218,27 +218,27 @@ typedef struct xor_h0h1h2_s xor_h0h1h2_t;
 
 static inline uint32_t xor8_get_h0(uint64_t hash, const xor8_t *filter) {
   uint32_t r0 = (uint32_t)hash;
-  return xor_reduce(r0, filter->blockLength);
+  return xor_reduce(r0, (uint32_t)filter->blockLength);
 }
 static inline uint32_t xor8_get_h1(uint64_t hash, const xor8_t *filter) {
   uint32_t r1 = (uint32_t)xor_rotl64(hash, 21);
-  return xor_reduce(r1, filter->blockLength);
+  return xor_reduce(r1, (uint32_t)filter->blockLength);
 }
 static inline uint32_t xor8_get_h2(uint64_t hash, const xor8_t *filter) {
   uint32_t r2 = (uint32_t)xor_rotl64(hash, 42);
-  return xor_reduce(r2, filter->blockLength);
+  return xor_reduce(r2, (uint32_t)filter->blockLength);
 }
 static inline uint32_t xor16_get_h0(uint64_t hash, const xor16_t *filter) {
   uint32_t r0 = (uint32_t)hash;
-  return xor_reduce(r0, filter->blockLength);
+  return xor_reduce(r0, (uint32_t)filter->blockLength);
 }
 static inline uint32_t xor16_get_h1(uint64_t hash, const xor16_t *filter) {
   uint32_t r1 = (uint32_t)xor_rotl64(hash, 21);
-  return xor_reduce(r1, filter->blockLength);
+  return xor_reduce(r1, (uint32_t)filter->blockLength);
 }
 static inline uint32_t xor16_get_h2(uint64_t hash, const xor16_t *filter) {
   uint32_t r2 = (uint32_t)xor_rotl64(hash, 42);
-  return xor_reduce(r2, filter->blockLength);
+  return xor_reduce(r2, (uint32_t)filter->blockLength);
 }
 static inline xor_hashes_t xor16_get_h0_h1_h2(uint64_t k,
                                               const xor16_t *filter) {
@@ -249,9 +249,9 @@ static inline xor_hashes_t xor16_get_h0_h1_h2(uint64_t k,
   uint32_t r1 = (uint32_t)xor_rotl64(hash, 21);
   uint32_t r2 = (uint32_t)xor_rotl64(hash, 42);
 
-  answer.h0 = xor_reduce(r0, filter->blockLength);
-  answer.h1 = xor_reduce(r1, filter->blockLength);
-  answer.h2 = xor_reduce(r2, filter->blockLength);
+  answer.h0 = xor_reduce(r0, (uint32_t)filter->blockLength);
+  answer.h1 = xor_reduce(r1, (uint32_t)filter->blockLength);
+  answer.h2 = xor_reduce(r2, (uint32_t)filter->blockLength);
   return answer;
 }
 
@@ -265,7 +265,7 @@ typedef struct xor_keyindex_s xor_keyindex_t;
 struct xor_setbuffer_s {
   xor_keyindex_t *buffer;
   uint32_t *counts;
-  int insignificantbits;
+  int insignificantbits; // should be an unsigned type to avoid a lot of casts
   uint32_t slotsize; // should be 1<< insignificantbits
   uint32_t slotcount;
   size_t originalsize;
@@ -276,10 +276,10 @@ typedef struct xor_setbuffer_s xor_setbuffer_t;
 static inline bool xor_init_buffer(xor_setbuffer_t *buffer, size_t size) {
   buffer->originalsize = size;
   buffer->insignificantbits = 18;
-  buffer->slotsize = UINT32_C(1) << buffer->insignificantbits;
-  buffer->slotcount = (size + buffer->slotsize - 1) / buffer->slotsize;
+  buffer->slotsize = UINT32_C(1) << (uint32_t)buffer->insignificantbits;
+  buffer->slotcount = (uint32_t)(size + buffer->slotsize - 1) / buffer->slotsize;
   buffer->buffer = (xor_keyindex_t *)malloc(
-      buffer->slotcount * buffer->slotsize * sizeof(xor_keyindex_t));
+      (size_t)buffer->slotcount * buffer->slotsize * sizeof(xor_keyindex_t));
   buffer->counts = (uint32_t *)malloc(buffer->slotcount * sizeof(uint32_t));
   if ((buffer->counts == NULL) || (buffer->buffer == NULL)) {
     free(buffer->counts);
@@ -300,12 +300,12 @@ static inline void xor_free_buffer(xor_setbuffer_t *buffer) {
 static inline void xor_buffered_increment_counter(uint32_t index, uint64_t hash,
                                                   xor_setbuffer_t *buffer,
                                                   xor_xorset_t *sets) {
-  uint32_t slot = index >> buffer->insignificantbits;
-  size_t addr = buffer->counts[slot] + (slot << buffer->insignificantbits);
+  uint32_t slot = index >> (uint32_t)buffer->insignificantbits;
+  size_t addr = buffer->counts[slot] + (slot << (uint32_t)buffer->insignificantbits);
   buffer->buffer[addr].index = index;
   buffer->buffer[addr].hash = hash;
   buffer->counts[slot]++;
-  size_t offset = (slot << buffer->insignificantbits);
+  size_t offset = (slot << (uint32_t)buffer->insignificantbits);
   if (buffer->counts[slot] == buffer->slotsize) {
     // must empty the buffer
     for (size_t i = offset; i < buffer->slotsize + offset; i++) {
@@ -321,10 +321,10 @@ static inline void xor_buffered_increment_counter(uint32_t index, uint64_t hash,
 static inline void xor_make_buffer_current(xor_setbuffer_t *buffer,
                                            xor_xorset_t *sets, uint32_t index,
                                            xor_keyindex_t *Q, size_t *Qsize) {
-  uint32_t slot = index >> buffer->insignificantbits;
+  uint32_t slot = index >> (uint32_t)buffer->insignificantbits;
   if(buffer->counts[slot] > 0) { // uncommon!
     size_t qsize = *Qsize;
-    size_t offset = (slot << buffer->insignificantbits);
+    size_t offset = (slot << (uint32_t)buffer->insignificantbits);
     for (size_t i = offset; i < buffer->counts[slot] + offset; i++) {
       xor_keyindex_t ki = buffer->buffer[i];
       sets[ki.index].xormask ^= ki.hash;
@@ -347,14 +347,14 @@ static inline void xor_buffered_decrement_counter(uint32_t index, uint64_t hash,
                                                   xor_xorset_t *sets,
                                                   xor_keyindex_t *Q,
                                                   size_t *Qsize) {
-  uint32_t slot = index >> buffer->insignificantbits;
-  size_t addr = buffer->counts[slot] + (slot << buffer->insignificantbits);
+  uint32_t slot = index >> (uint32_t)buffer->insignificantbits;
+  size_t addr = buffer->counts[slot] + (slot << (uint32_t)buffer->insignificantbits);
   buffer->buffer[addr].index = index;
   buffer->buffer[addr].hash = hash;
   buffer->counts[slot]++;
   if (buffer->counts[slot] == buffer->slotsize) {
     size_t qsize = *Qsize;
-    size_t offset = (slot << buffer->insignificantbits);
+    size_t offset = (slot << (uint32_t)buffer->insignificantbits);
     for (size_t i = offset; i < buffer->counts[slot] + offset; i++) {
       xor_keyindex_t ki =
           buffer->buffer[i];
@@ -374,7 +374,7 @@ static inline void xor_buffered_decrement_counter(uint32_t index, uint64_t hash,
 static inline void xor_flush_increment_buffer(xor_setbuffer_t *buffer,
                                               xor_xorset_t *sets) {
   for (uint32_t slot = 0; slot < buffer->slotcount; slot++) {
-    size_t offset = (slot << buffer->insignificantbits);
+    size_t offset = (slot << (uint32_t)buffer->insignificantbits);
     for (size_t i = offset; i < buffer->counts[slot] + offset; i++) {
       xor_keyindex_t ki =
           buffer->buffer[i];
@@ -391,7 +391,7 @@ static inline void xor_flush_decrement_buffer(xor_setbuffer_t *buffer,
                                               size_t *Qsize) {
   size_t qsize = *Qsize;
   for (uint32_t slot = 0; slot < buffer->slotcount; slot++) {
-    uint32_t base = (slot << buffer->insignificantbits);
+    uint32_t base = (slot << (uint32_t)buffer->insignificantbits);
     for (size_t i = base; i < buffer->counts[slot] + base; i++) {
       xor_keyindex_t ki = buffer->buffer[i];
       sets[ki.index].xormask ^= ki.hash;
@@ -422,7 +422,7 @@ static inline uint32_t xor_flushone_decrement_buffer(xor_setbuffer_t *buffer,
   uint32_t slot = bestslot;
   size_t qsize = *Qsize;
   // for(uint32_t slot = 0; slot < buffer->slotcount; slot++) {
-  uint32_t base = (slot << buffer->insignificantbits);
+  uint32_t base = (slot << (uint32_t)buffer->insignificantbits);
   for (size_t i = base; i < buffer->counts[slot] + base; i++) {
     xor_keyindex_t ki = buffer->buffer[i];
     sets[ki.index].xormask ^= ki.hash;
