@@ -578,7 +578,7 @@ static inline bool xor8_buffered_populate(uint64_t *keys, uint32_t size, xor8_t 
         //sets1[index].count = 0;
         uint64_t hash = keyindex.hash;
         uint32_t h0 = xor8_get_h0(hash, filter);
-        uint32_t h2 = xor8_get_h2((uint32_t)hash, filter);
+        uint32_t h2 = xor8_get_h2(hash, filter);
         keyindex.index += (uint32_t)blockLength;
         stack[stack_size] = keyindex;
         stack_size++;
