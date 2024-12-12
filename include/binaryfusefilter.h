@@ -8,9 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 #ifndef XOR_MAX_ITERATIONS
-#define XOR_MAX_ITERATIONS                                                     \
-  100 // probability of success should always be > 0.5 so 100 iterations is
-      // highly unlikely
+// probability of success should always be > 0.5 so 100 iterations is highly unlikely
+#define XOR_MAX_ITERATIONS 100 
 #endif
 
 static int binary_fuse_cmpfunc(const void * a, const void * b) {
