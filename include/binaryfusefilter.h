@@ -382,7 +382,7 @@ static inline bool binary_fuse8_populate(uint64_t *keys, uint32_t size,
     // Add sets with one key to the queue.
     for (uint32_t i = 0; i < capacity; i++) {
       alone[Qsize] = i;
-      Qsize += ((t2count[i] >> 2U) == 1) ? 1 : 0;
+      Qsize += ((t2count[i] >> 2U) == 1) ? 1U : 0U;
     }
     uint32_t stacksize = 0;
     while (Qsize > 0) {
@@ -402,7 +402,7 @@ static inline bool binary_fuse8_populate(uint64_t *keys, uint32_t size,
         stacksize++;
         uint32_t other_index1 = h012[found + 1];
         alone[Qsize] = other_index1;
-        Qsize += ((t2count[other_index1] >> 2U) == 2 ? 1 : 0);
+        Qsize += ((t2count[other_index1] >> 2U) == 2 ? 1U : 0U);
 
         t2count[other_index1] -= 4;
         t2count[other_index1] ^= binary_fuse_mod3(found + 1);
@@ -410,7 +410,7 @@ static inline bool binary_fuse8_populate(uint64_t *keys, uint32_t size,
 
         uint32_t other_index2 = h012[found + 2];
         alone[Qsize] = other_index2;
-        Qsize += ((t2count[other_index2] >> 2U) == 2 ? 1 : 0);
+        Qsize += ((t2count[other_index2] >> 2U) == 2 ? 1U : 0U);
         t2count[other_index2] -= 4;
         t2count[other_index2] ^= binary_fuse_mod3(found + 2);
         t2hash[other_index2] ^= hash;
@@ -668,7 +668,7 @@ static inline bool binary_fuse16_populate(uint64_t *keys, uint32_t size,
     // Add sets with one key to the queue.
     for (uint32_t i = 0; i < capacity; i++) {
       alone[Qsize] = i;
-      Qsize += ((t2count[i] >> 2U) == 1) ? 1 : 0;
+      Qsize += ((t2count[i] >> 2U) == 1) ? 1U : 0U;
     }
     uint32_t stacksize = 0;
     while (Qsize > 0) {
@@ -688,7 +688,7 @@ static inline bool binary_fuse16_populate(uint64_t *keys, uint32_t size,
         stacksize++;
         uint32_t other_index1 = h012[found + 1];
         alone[Qsize] = other_index1;
-        Qsize += ((t2count[other_index1] >> 2U) == 2 ? 1 : 0);
+        Qsize += ((t2count[other_index1] >> 2U) == 2 ? 1U : 0U);
 
         t2count[other_index1] -= 4;
         t2count[other_index1] ^= binary_fuse_mod3(found + 1);
@@ -696,7 +696,7 @@ static inline bool binary_fuse16_populate(uint64_t *keys, uint32_t size,
 
         uint32_t other_index2 = h012[found + 2];
         alone[Qsize] = other_index2;
-        Qsize += ((t2count[other_index2] >> 2U) == 2 ? 1 : 0);
+        Qsize += ((t2count[other_index2] >> 2U) == 2 ? 1U : 0U);
         t2count[other_index2] -= 4;
         t2count[other_index2] ^= binary_fuse_mod3(found + 2);
         t2hash[other_index2] ^= hash;
