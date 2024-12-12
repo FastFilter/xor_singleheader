@@ -12,7 +12,8 @@
 #endif
 
 #ifndef XOR_MAX_ITERATIONS
-#define XOR_MAX_ITERATIONS 100 // probabillity of success should always be > 0.5 so 100 iterations is highly unlikely
+// probabillity of success should always be > 0.5 so 100 iterations is highly unlikely
+#define XOR_MAX_ITERATIONS 100
 #endif
 
 
@@ -577,8 +578,8 @@ static inline bool xor8_buffered_populate(uint64_t *keys, uint32_t size, xor8_t 
         //sets1[index].count = 0;
         uint64_t hash = keyindex.hash;
         uint32_t h0 = xor8_get_h0(hash, filter);
-        uint32_t h2 = xor8_get_h2(hash, filter);
-        keyindex.index += blockLength;
+        uint32_t h2 = xor8_get_h2((uint32_t)hash, filter);
+        keyindex.index += (uint32_t)blockLength;
         stack[stack_size] = keyindex;
         stack_size++;
         xor_buffered_decrement_counter(h0, hash, &buffer0, sets0, Q0, &Q0size);
@@ -599,7 +600,7 @@ static inline bool xor8_buffered_populate(uint64_t *keys, uint32_t size, xor8_t 
 
         uint32_t h0 = xor8_get_h0(hash, filter);
         uint32_t h1 = xor8_get_h1(hash, filter);
-        keyindex.index += 2 * blockLength;
+        keyindex.index += 2 * (uint32_t)blockLength;
 
         stack[stack_size] = keyindex;
         stack_size++;
@@ -775,7 +776,7 @@ static inline bool xor8_populate(uint64_t *keys, uint32_t size, xor8_t *filter) 
         uint64_t hash = keyindex.hash;
         uint32_t h0 = xor8_get_h0(hash, filter);
         uint32_t h2 = xor8_get_h2(hash, filter);
-        keyindex.index += blockLength;
+        keyindex.index += (uint32_t)blockLength;
         stack[stack_size] = keyindex;
         stack_size++;
         sets0[h0].xormask ^= hash;
@@ -804,7 +805,7 @@ static inline bool xor8_populate(uint64_t *keys, uint32_t size, xor8_t *filter) 
 
         uint32_t h0 = xor8_get_h0(hash, filter);
         uint32_t h1 = xor8_get_h1(hash, filter);
-        keyindex.index += 2 * blockLength;
+        keyindex.index += 2 * (uint32_t)blockLength;
 
         stack[stack_size] = keyindex;
         stack_size++;
@@ -997,7 +998,7 @@ static inline bool xor16_buffered_populate(uint64_t *keys, uint32_t size, xor16_
         uint64_t hash = keyindex.hash;
         uint32_t h0 = xor16_get_h0(hash, filter);
         uint32_t h2 = xor16_get_h2(hash, filter);
-        keyindex.index += blockLength;
+        keyindex.index += (uint32_t)blockLength;
         stack[stack_size] = keyindex;
         stack_size++;
         xor_buffered_decrement_counter(h0, hash, &buffer0, sets0, Q0, &Q0size);
@@ -1018,7 +1019,7 @@ static inline bool xor16_buffered_populate(uint64_t *keys, uint32_t size, xor16_
 
         uint32_t h0 = xor16_get_h0(hash, filter);
         uint32_t h1 = xor16_get_h1(hash, filter);
-        keyindex.index += 2 * blockLength;
+        keyindex.index += 2 * (uint32_t)blockLength;
 
         stack[stack_size] = keyindex;
         stack_size++;
@@ -1197,7 +1198,7 @@ static inline bool xor16_populate(uint64_t *keys, uint32_t size, xor16_t *filter
         uint64_t hash = keyindex.hash;
         uint32_t h0 = xor16_get_h0(hash, filter);
         uint32_t h2 = xor16_get_h2(hash, filter);
-        keyindex.index += blockLength;
+        keyindex.index += (uint32_t)blockLength;
         stack[stack_size] = keyindex;
         stack_size++;
         sets0[h0].xormask ^= hash;
@@ -1226,7 +1227,7 @@ static inline bool xor16_populate(uint64_t *keys, uint32_t size, xor16_t *filter
 
         uint32_t h0 = xor16_get_h0(hash, filter);
         uint32_t h1 = xor16_get_h1(hash, filter);
-        keyindex.index += 2 * blockLength;
+        keyindex.index += 2 * (uint32_t)blockLength;
 
         stack[stack_size] = keyindex;
         stack_size++;
