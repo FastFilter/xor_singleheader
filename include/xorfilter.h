@@ -491,7 +491,7 @@ static inline bool xor8_buffered_populate(uint64_t *keys, uint32_t size, xor8_t 
   while (true) {
     iterations ++;
     if(iterations == XOR_SORT_ITERATIONS) {
-      size = xor_sort_and_remove_dup(keys, size);
+      size = (uint32_t)xor_sort_and_remove_dup(keys, size);
     }
     if(iterations > XOR_MAX_ITERATIONS) {
       // The probability of this happening is lower than the
@@ -522,7 +522,7 @@ static inline bool xor8_buffered_populate(uint64_t *keys, uint32_t size, xor8_t 
     size_t Q0size = 0, Q1size = 0, Q2size = 0;
     for (size_t i = 0; i < filter->blockLength; i++) {
       if (sets0[i].count == 1) {
-        Q0[Q0size].index = i;
+        Q0[Q0size].index = (uint32_t)i;
         Q0[Q0size].hash = sets0[i].xormask;
         Q0size++;
       }
@@ -530,14 +530,14 @@ static inline bool xor8_buffered_populate(uint64_t *keys, uint32_t size, xor8_t 
 
     for (size_t i = 0; i < filter->blockLength; i++) {
       if (sets1[i].count == 1) {
-        Q1[Q1size].index = i;
+        Q1[Q1size].index = (uint32_t)i;
         Q1[Q1size].hash = sets1[i].xormask;
         Q1size++;
       }
     }
     for (size_t i = 0; i < filter->blockLength; i++) {
       if (sets2[i].count == 1) {
-        Q2[Q2size].index = i;
+        Q2[Q2size].index = (uint32_t)i;
         Q2[Q2size].hash = sets2[i].xormask;
         Q2size++;
       }
@@ -548,7 +548,7 @@ static inline bool xor8_buffered_populate(uint64_t *keys, uint32_t size, xor8_t 
       while (Q0size > 0) {
         xor_keyindex_t keyindex = Q0[--Q0size];
         size_t index = keyindex.index;
-        xor_make_buffer_current(&buffer0, sets0, index, Q0, &Q0size);
+        xor_make_buffer_current(&buffer0, sets0, (uint32_t)index, Q0, &Q0size);
 
         if (sets0[index].count == 0)
           continue; // not actually possible after the initial scan.
@@ -570,7 +570,7 @@ static inline bool xor8_buffered_populate(uint64_t *keys, uint32_t size, xor8_t 
       while (Q1size > 0) {
         xor_keyindex_t keyindex = Q1[--Q1size];
         size_t index = keyindex.index;
-        xor_make_buffer_current(&buffer1, sets1, index, Q1, &Q1size);
+        xor_make_buffer_current(&buffer1, sets1, (uint32_t)index, Q1, &Q1size);
 
         if (sets1[index].count == 0)
           continue;
@@ -590,7 +590,7 @@ static inline bool xor8_buffered_populate(uint64_t *keys, uint32_t size, xor8_t 
       while (Q2size > 0) {
         xor_keyindex_t keyindex = Q2[--Q2size];
         size_t index = keyindex.index;
-        xor_make_buffer_current(&buffer2, sets2, index, Q2, &Q2size);
+        xor_make_buffer_current(&buffer2, sets2, (uint32_t)index, Q2, &Q2size);
         if (sets2[index].count == 0)
           continue;
 
@@ -632,13 +632,13 @@ static inline bool xor8_buffered_populate(uint64_t *keys, uint32_t size, xor8_t 
     xor_keyindex_t ki = stack[--stack_size];
     uint64_t val = xor_fingerprint(ki.hash);
     if(ki.index < blockLength) {
-      val ^= fingerprints1[xor8_get_h1(ki.hash,filter)] ^ fingerprints2[xor8_get_h2(ki.hash,filter)];
+      val ^= (uint32_t)fingerprints1[xor8_get_h1(ki.hash,filter)] ^ fingerprints2[xor8_get_h2(ki.hash,filter)];
     } else if(ki.index < 2 * blockLength) {
-      val ^= fingerprints0[xor8_get_h0(ki.hash,filter)] ^ fingerprints2[xor8_get_h2(ki.hash,filter)];
+      val ^= (uint32_t)fingerprints0[xor8_get_h0(ki.hash,filter)] ^ fingerprints2[xor8_get_h2(ki.hash,filter)];
     } else {
-      val ^= fingerprints0[xor8_get_h0(ki.hash,filter)] ^ fingerprints1[xor8_get_h1(ki.hash,filter)];
+      val ^= (uint32_t)fingerprints0[xor8_get_h0(ki.hash,filter)] ^ fingerprints1[xor8_get_h1(ki.hash,filter)];
     }
-    filter->fingerprints[ki.index] = val;
+    filter->fingerprints[ki.index] = (uint8_t)val;
   }
   xor_free_buffer(&buffer0);
   xor_free_buffer(&buffer1);
@@ -689,7 +689,7 @@ static inline bool xor8_populate(uint64_t *keys, uint32_t size, xor8_t *filter) 
   while (true) {
     iterations ++;
     if(iterations == XOR_SORT_ITERATIONS) {
-      size = xor_sort_and_remove_dup(keys, size);
+      size = (uint32_t)xor_sort_and_remove_dup(keys, size);
     }
     if(iterations > XOR_MAX_ITERATIONS) {
       // The probability of this happening is lower than the
@@ -716,7 +716,7 @@ static inline bool xor8_populate(uint64_t *keys, uint32_t size, xor8_t *filter) 
     size_t Q0size = 0, Q1size = 0, Q2size = 0;
     for (size_t i = 0; i < filter->blockLength; i++) {
       if (sets0[i].count == 1) {
-        Q0[Q0size].index = i;
+        Q0[Q0size].index = (uint32_t)i;
         Q0[Q0size].hash = sets0[i].xormask;
         Q0size++;
       }
@@ -724,14 +724,14 @@ static inline bool xor8_populate(uint64_t *keys, uint32_t size, xor8_t *filter) 
 
     for (size_t i = 0; i < filter->blockLength; i++) {
       if (sets1[i].count == 1) {
-        Q1[Q1size].index = i;
+        Q1[Q1size].index = (uint32_t)i;
         Q1[Q1size].hash = sets1[i].xormask;
         Q1size++;
       }
     }
     for (size_t i = 0; i < filter->blockLength; i++) {
       if (sets2[i].count == 1) {
-        Q2[Q2size].index = i;
+        Q2[Q2size].index = (uint32_t)i;
         Q2[Q2size].hash = sets2[i].xormask;
         Q2size++;
       }
@@ -841,13 +841,13 @@ static inline bool xor8_populate(uint64_t *keys, uint32_t size, xor8_t *filter) 
     xor_keyindex_t ki = stack[--stack_size];
     uint64_t val = xor_fingerprint(ki.hash);
     if(ki.index < blockLength) {
-      val ^= fingerprints1[xor8_get_h1(ki.hash,filter)] ^ fingerprints2[xor8_get_h2(ki.hash,filter)];
+      val ^= (uint32_t)fingerprints1[xor8_get_h1(ki.hash,filter)] ^ fingerprints2[xor8_get_h2(ki.hash,filter)];
     } else if(ki.index < 2 * blockLength) {
-      val ^= fingerprints0[xor8_get_h0(ki.hash,filter)] ^ fingerprints2[xor8_get_h2(ki.hash,filter)];
+      val ^= (uint32_t)fingerprints0[xor8_get_h0(ki.hash,filter)] ^ fingerprints2[xor8_get_h2(ki.hash,filter)];
     } else {
-      val ^= fingerprints0[xor8_get_h0(ki.hash,filter)] ^ fingerprints1[xor8_get_h1(ki.hash,filter)];
+      val ^= (uint32_t)fingerprints0[xor8_get_h0(ki.hash,filter)] ^ fingerprints1[xor8_get_h1(ki.hash,filter)];
     }
-    filter->fingerprints[ki.index] = val;
+    filter->fingerprints[ki.index] = (uint8_t)val;
   }
 
   free(sets);
@@ -909,7 +909,7 @@ static inline bool xor16_buffered_populate(uint64_t *keys, uint32_t size, xor16_
   while (true) {
     iterations ++;
     if(iterations == XOR_SORT_ITERATIONS) {
-      size = xor_sort_and_remove_dup(keys, size);
+      size = (uint32_t)xor_sort_and_remove_dup(keys, size);
     }
     if(iterations > XOR_MAX_ITERATIONS) {
       // The probability of this happening is lower than the
@@ -941,7 +941,7 @@ static inline bool xor16_buffered_populate(uint64_t *keys, uint32_t size, xor16_
     size_t Q0size = 0, Q1size = 0, Q2size = 0;
     for (size_t i = 0; i < filter->blockLength; i++) {
       if (sets0[i].count == 1) {
-        Q0[Q0size].index = i;
+        Q0[Q0size].index = (uint32_t)i;
         Q0[Q0size].hash = sets0[i].xormask;
         Q0size++;
       }
@@ -949,14 +949,14 @@ static inline bool xor16_buffered_populate(uint64_t *keys, uint32_t size, xor16_
 
     for (size_t i = 0; i < filter->blockLength; i++) {
       if (sets1[i].count == 1) {
-        Q1[Q1size].index = i;
+        Q1[Q1size].index = (uint32_t)i;
         Q1[Q1size].hash = sets1[i].xormask;
         Q1size++;
       }
     }
     for (size_t i = 0; i < filter->blockLength; i++) {
       if (sets2[i].count == 1) {
-        Q2[Q2size].index = i;
+        Q2[Q2size].index = (uint32_t)i;
         Q2[Q2size].hash = sets2[i].xormask;
         Q2size++;
       }
@@ -967,7 +967,7 @@ static inline bool xor16_buffered_populate(uint64_t *keys, uint32_t size, xor16_
       while (Q0size > 0) {
         xor_keyindex_t keyindex = Q0[--Q0size];
         size_t index = keyindex.index;
-        xor_make_buffer_current(&buffer0, sets0, index, Q0, &Q0size);
+        xor_make_buffer_current(&buffer0, sets0, (uint32_t)index, Q0, &Q0size);
 
         if (sets0[index].count == 0)
           continue; // not actually possible after the initial scan.
@@ -989,7 +989,7 @@ static inline bool xor16_buffered_populate(uint64_t *keys, uint32_t size, xor16_
       while (Q1size > 0) {
         xor_keyindex_t keyindex = Q1[--Q1size];
         size_t index = keyindex.index;
-        xor_make_buffer_current(&buffer1, sets1, index, Q1, &Q1size);
+        xor_make_buffer_current(&buffer1, sets1, (uint32_t)index, Q1, &Q1size);
 
         if (sets1[index].count == 0)
           continue;
@@ -1009,7 +1009,7 @@ static inline bool xor16_buffered_populate(uint64_t *keys, uint32_t size, xor16_
       while (Q2size > 0) {
         xor_keyindex_t keyindex = Q2[--Q2size];
         size_t index = keyindex.index;
-        xor_make_buffer_current(&buffer2, sets2, index, Q2, &Q2size);
+        xor_make_buffer_current(&buffer2, sets2, (uint32_t)index, Q2, &Q2size);
         if (sets2[index].count == 0)
           continue;
 
@@ -1051,13 +1051,13 @@ static inline bool xor16_buffered_populate(uint64_t *keys, uint32_t size, xor16_
     xor_keyindex_t ki = stack[--stack_size];
     uint64_t val = xor_fingerprint(ki.hash);
     if(ki.index < blockLength) {
-      val ^= fingerprints1[xor16_get_h1(ki.hash,filter)] ^ fingerprints2[xor16_get_h2(ki.hash,filter)];
+      val ^= (uint32_t)fingerprints1[xor16_get_h1(ki.hash,filter)] ^ fingerprints2[xor16_get_h2(ki.hash,filter)];
     } else if(ki.index < 2 * blockLength) {
-      val ^= fingerprints0[xor16_get_h0(ki.hash,filter)] ^ fingerprints2[xor16_get_h2(ki.hash,filter)];
+      val ^= (uint32_t)fingerprints0[xor16_get_h0(ki.hash,filter)] ^ fingerprints2[xor16_get_h2(ki.hash,filter)];
     } else {
-      val ^= fingerprints0[xor16_get_h0(ki.hash,filter)] ^ fingerprints1[xor16_get_h1(ki.hash,filter)];
+      val ^= (uint32_t)fingerprints0[xor16_get_h0(ki.hash,filter)] ^ fingerprints1[xor16_get_h1(ki.hash,filter)];
     }
-    filter->fingerprints[ki.index] = val;
+    filter->fingerprints[ki.index] = (uint16_t)val;
   }
   xor_free_buffer(&buffer0);
   xor_free_buffer(&buffer1);
@@ -1111,7 +1111,7 @@ static inline bool xor16_populate(uint64_t *keys, uint32_t size, xor16_t *filter
   while (true) {
     iterations ++;
     if(iterations == XOR_SORT_ITERATIONS) {
-      size = xor_sort_and_remove_dup(keys, size);
+      size = (uint32_t)xor_sort_and_remove_dup(keys, size);
     }
     if(iterations > XOR_MAX_ITERATIONS) {
       // The probability of this happening is lower than the
@@ -1138,7 +1138,7 @@ static inline bool xor16_populate(uint64_t *keys, uint32_t size, xor16_t *filter
     size_t Q0size = 0, Q1size = 0, Q2size = 0;
     for (size_t i = 0; i < filter->blockLength; i++) {
       if (sets0[i].count == 1) {
-        Q0[Q0size].index = i;
+        Q0[Q0size].index = (uint32_t)i;
         Q0[Q0size].hash = sets0[i].xormask;
         Q0size++;
       }
@@ -1146,14 +1146,14 @@ static inline bool xor16_populate(uint64_t *keys, uint32_t size, xor16_t *filter
 
     for (size_t i = 0; i < filter->blockLength; i++) {
       if (sets1[i].count == 1) {
-        Q1[Q1size].index = i;
+        Q1[Q1size].index = (uint32_t)i;
         Q1[Q1size].hash = sets1[i].xormask;
         Q1size++;
       }
     }
     for (size_t i = 0; i < filter->blockLength; i++) {
       if (sets2[i].count == 1) {
-        Q2[Q2size].index = i;
+        Q2[Q2size].index = (uint32_t)i;
         Q2[Q2size].hash = sets2[i].xormask;
         Q2size++;
       }
@@ -1263,13 +1263,13 @@ static inline bool xor16_populate(uint64_t *keys, uint32_t size, xor16_t *filter
     xor_keyindex_t ki = stack[--stack_size];
     uint64_t val = xor_fingerprint(ki.hash);
     if(ki.index < blockLength) {
-      val ^= fingerprints1[xor16_get_h1(ki.hash,filter)] ^ fingerprints2[xor16_get_h2(ki.hash,filter)];
+      val ^= (uint32_t)fingerprints1[xor16_get_h1(ki.hash,filter)] ^ fingerprints2[xor16_get_h2(ki.hash,filter)];
     } else if(ki.index < 2 * blockLength) {
-      val ^= fingerprints0[xor16_get_h0(ki.hash,filter)] ^ fingerprints2[xor16_get_h2(ki.hash,filter)];
+      val ^= (uint32_t)fingerprints0[xor16_get_h0(ki.hash,filter)] ^ fingerprints2[xor16_get_h2(ki.hash,filter)];
     } else {
-      val ^= fingerprints0[xor16_get_h0(ki.hash,filter)] ^ fingerprints1[xor16_get_h1(ki.hash,filter)];
+      val ^= (uint32_t)fingerprints0[xor16_get_h0(ki.hash,filter)] ^ fingerprints1[xor16_get_h1(ki.hash,filter)];
     }
-    filter->fingerprints[ki.index] = val;
+    filter->fingerprints[ki.index] = (uint16_t)val;
   }
 
   free(sets);
