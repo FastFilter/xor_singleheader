@@ -191,12 +191,12 @@ static inline uint32_t binary_fuse_calculate_segment_length(uint32_t arity,
   // These parameters are very sensitive. Replacing 'floor' by 'round' can
   // substantially affect the construction time.
   if (arity == 3) {
-    return ((uint32_t)1) << (int)(floor(log((double)(size)) / log(3.33) + 2.25));
-  } else if (arity == 4) {
-    return ((uint32_t)1) << (int)(floor(log((double)(size)) / log(2.91) - 0.5));
-  } else {
-    return 65536;
+    return ((uint32_t)1) << (unsigned)(floor(log((double)(size)) / log(3.33) + 2.25));
   }
+  if (arity == 4) {
+    return ((uint32_t)1) << (unsigned)(floor(log((double)(size)) / log(2.91) - 0.5));
+  }
+  return 65536;
 }
 
 static inline double binary_fuse_max(double a, double b) {
@@ -210,11 +210,11 @@ static inline double binary_fuse_calculate_size_factor(uint32_t arity,
                                                         uint32_t size) {
   if (arity == 3) {
     return binary_fuse_max(1.125, 0.875 + 0.25 * log(1000000.0) / log((double)size));
-  } else if (arity == 4) {
-    return binary_fuse_max(1.075, 0.77 + 0.305 * log(600000.0) / log((double)size));
-  } else {
-    return 2.0;
   }
+  if (arity == 4) {
+    return binary_fuse_max(1.075, 0.77 + 0.305 * log(600000.0) / log((double)size));
+  }
+  return 2.0;
 }
 
 // allocate enough capacity for a set containing up to 'size' elements
@@ -291,7 +291,7 @@ static inline bool binary_fuse8_populate(uint64_t *keys, uint32_t size,
     blockBits += 1;
   }
   uint32_t block = ((uint32_t)1 << blockBits);
-  uint32_t *startPos = (uint32_t *)malloc((1 << blockBits) * sizeof(uint32_t));
+  uint32_t *startPos = (uint32_t *)malloc((1U << blockBits) * sizeof(uint32_t));
   uint32_t h012[5];
 
   if ((alone == NULL) || (t2count == NULL) || (reverseH == NULL) ||
@@ -309,7 +309,7 @@ static inline bool binary_fuse8_populate(uint64_t *keys, uint32_t size,
     if (loop + 1 > XOR_MAX_ITERATIONS) {
       // The probability of this happening is lower than the
       // the cosmic-ray probability (i.e., a cosmic ray corrupts your system)
-      memset(filter->Fingerprints, ~0, filter->ArrayLength);
+      memset(filter->Fingerprints, 0xFF, filter->ArrayLength);
       free(alone);
       free(t2count);
       free(reverseH);
@@ -345,12 +345,12 @@ static inline bool binary_fuse8_populate(uint64_t *keys, uint32_t size,
       t2hash[h0] ^= hash;
       uint32_t h1= binary_fuse8_hash(1, hash, filter);
       t2count[h1] += 4;
-      t2count[h1] ^= 1;
+      t2count[h1] ^= 1U;
       t2hash[h1] ^= hash;
       uint32_t h2 = binary_fuse8_hash(2, hash, filter);
       t2count[h2] += 4;
       t2hash[h2] ^= hash;
-      t2count[h2] ^= 2;
+      t2count[h2] ^= 2U;
       if ((t2hash[h0] & t2hash[h1] & t2hash[h2]) == 0) {
         if   (((t2hash[h0] == 0) && (t2count[h0] == 8))
           ||  ((t2hash[h1] == 0) && (t2count[h1] == 8))
@@ -359,10 +359,10 @@ static inline bool binary_fuse8_populate(uint64_t *keys, uint32_t size,
  					t2count[h0] -= 4;
  					t2hash[h0] ^= hash;
  					t2count[h1] -= 4;
- 					t2count[h1] ^= 1;
+ 					t2count[h1] ^= 1U;
  					t2hash[h1] ^= hash;
  					t2count[h2] -= 4;
- 					t2count[h2] ^= 2;
+ 					t2count[h2] ^= 2U;
  					t2hash[h2] ^= hash;
         }
       }
@@ -441,9 +441,9 @@ static inline bool binary_fuse8_populate(uint64_t *keys, uint32_t size,
     h012[2] = binary_fuse8_hash(2, hash, filter);
     h012[3] = h012[0];
     h012[4] = h012[1];
-    filter->Fingerprints[h012[found]] = xor2 ^
-                                        filter->Fingerprints[h012[found + 1]] ^
-                                        filter->Fingerprints[h012[found + 2]];
+    filter->Fingerprints[h012[found]] = (uint8_t)((uint32_t)xor2 ^
+                                                  filter->Fingerprints[h012[found + 1]] ^
+                                                  filter->Fingerprints[h012[found + 2]]);
   }
   free(alone);
   free(t2count);
@@ -578,7 +578,7 @@ static inline bool binary_fuse16_populate(uint64_t *keys, uint32_t size,
     blockBits += 1;
   }
   uint32_t block = ((uint32_t)1 << blockBits);
-  uint32_t *startPos = (uint32_t *)malloc((1 << blockBits) * sizeof(uint32_t));
+  uint32_t *startPos = (uint32_t *)malloc((1U << blockBits) * sizeof(uint32_t));
   uint32_t h012[5];
 
   if ((alone == NULL) || (t2count == NULL) || (reverseH == NULL) ||
