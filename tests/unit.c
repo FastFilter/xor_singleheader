@@ -2,6 +2,38 @@
 #include "xorfilter.h"
 #include <assert.h>
 
+bool gen_xor8_contain(uint64_t key, const void* filter) { return xor8_contain(key, filter); }
+bool gen_xor16_contain(uint64_t key, const void* filter) { return xor16_contain(key, filter); }
+bool gen_binary_fuse8_contain(uint64_t key, const void* filter) { return binary_fuse8_contain(key, filter); }
+bool gen_binary_fuse16_contain(uint64_t key, const void* filter) { return binary_fuse16_contain(key, filter); }
+
+size_t gen_xor8_size_in_bytes(const void* filter) { return xor8_size_in_bytes(filter); }
+size_t gen_xor16_size_in_bytes(const void* filter) { return xor16_size_in_bytes(filter); }
+size_t gen_binary_fuse8_size_in_bytes(const void* filter) { return binary_fuse8_size_in_bytes(filter); }
+size_t gen_binary_fuse16_size_in_bytes(const void* filter) { return binary_fuse16_size_in_bytes(filter); }
+
+typedef bool (*contain_fpt)(uint64_t key, const void *filter);
+typedef size_t (*size_in_bytes_fpt)(const void *filter);
+
+void report(size_t size, void* filter, contain_fpt contain, size_in_bytes_fpt size_in_bytes) {
+  size_t random_matches = 0;
+  size_t trials = 10000000;
+  for (size_t i = 0; i < trials; i++) {
+    uint64_t random_key = ((uint64_t)rand() << 32U) + (uint64_t)rand();
+    if (contain(random_key, filter)) {
+      if (random_key >= size) {
+        random_matches++;
+      }
+    }
+  }
+  double fpp = (double)random_matches * 1.0 / (double)trials;
+  printf(" fpp %3.5f (estimated) \n", fpp);
+  double bpe = (double)size_in_bytes(filter) * 8.0 / (double)size;
+  printf(" bits per entry %3.2f\n", bpe);
+  printf(" bits per entry %3.2f (theoretical lower bound)\n", - log(fpp)/log(2));
+  printf(" efficiency ratio %3.3f \n", bpe /(- log(fpp)/log(2)));
+}
+
 bool testbufferedxor8(size_t size) {
   printf("testing buffered xor8\n");
 
@@ -21,23 +53,8 @@ bool testbufferedxor8(size_t size) {
     }
   }
 
-  size_t random_matches = 0;
-  size_t trials = 10000000;
-  for (size_t i = 0; i < trials; i++) {
-    uint64_t random_key = ((uint64_t)rand() << 32U) + (uint64_t)rand();
-    if (xor8_contain(random_key, &filter)) {
-      if (random_key >= size) {
-        random_matches++;
-      }
-    }
-  }
-  double fpp = (double)random_matches * 1.0 / (double)trials;
-  printf(" fpp %3.5f (estimated) \n", fpp);
-  double bpe = (double)xor8_size_in_bytes(&filter) * 8.0 / (double)size;
-  printf(" bits per entry %3.2f\n", bpe);
-  printf(" bits per entry %3.2f (theoretical lower bound)\n", - log(fpp)/log(2));
-  printf(" efficiency ratio %3.3f \n", bpe /(- log(fpp)/log(2)));
-
+  report(size, &filter, gen_xor8_contain, gen_xor8_size_in_bytes);
+  
   xor8_free(&filter);
   free(big_set);
   return true;
@@ -76,22 +93,8 @@ bool testxor8(size_t size) {
     }
   }
 
-  size_t random_matches = 0;
-  size_t trials = 10000000;
-  for (size_t i = 0; i < trials; i++) {
-    uint64_t random_key = ((uint64_t)rand() << 32U) + (uint64_t)rand();
-    if (xor8_contain(random_key, &filter)) {
-      if (random_key >= size) {
-        random_matches++;
-      }
-    }
-  }
-  double fpp = (double)random_matches * 1.0 / (double)trials;
-  printf(" fpp %3.5f (estimated) \n", fpp);
-  double bpe = (double)xor8_size_in_bytes(&filter) * 8.0 / (double)size;
-  printf(" bits per entry %3.2f\n", bpe);
-  printf(" bits per entry %3.2f (theoretical lower bound)\n", - log(fpp)/log(2));
-  printf(" efficiency ratio %3.3f \n", bpe /(- log(fpp)/log(2)));
+  report(size, &filter, gen_xor8_contain, gen_xor8_size_in_bytes);
+  
   xor8_free(&filter);
   free(big_set);
   return true;
@@ -128,22 +131,8 @@ bool testxor16(size_t size) {
     }
   }
 
-  size_t random_matches = 0;
-  size_t trials = 10000000;
-  for (size_t i = 0; i < trials; i++) {
-    uint64_t random_key = ((uint64_t)rand() << 32U) + (uint64_t)rand();
-    if (xor16_contain(random_key, &filter)) {
-      if (random_key >= size) {
-        random_matches++;
-      }
-    }
-  }
-  double fpp = (double)random_matches * 1.0 / (double)trials;
-  printf(" fpp %3.5f (estimated) \n", fpp);
-  double bpe = (double)xor16_size_in_bytes(&filter) * 8.0 / (double)size;
-  printf(" bits per entry %3.2f\n", bpe);
-  printf(" bits per entry %3.2f (theoretical lower bound)\n", - log(fpp)/log(2));
-  printf(" efficiency ratio %3.3f \n", bpe /(- log(fpp)/log(2)));
+  report(size, &filter, gen_xor16_contain, gen_xor16_size_in_bytes);
+  
   xor16_free(&filter);
   free(big_set);
   return true;
@@ -181,22 +170,8 @@ bool testbufferedxor16(size_t size) {
     }
   }
 
-  size_t random_matches = 0;
-  size_t trials = 10000000;
-  for (size_t i = 0; i < trials; i++) {
-    uint64_t random_key = ((uint64_t)rand() << 32U) + (uint64_t)rand();
-    if (xor16_contain(random_key, &filter)) {
-      if (random_key >= size) {
-        random_matches++;
-      }
-    }
-  }
-  double fpp = (double)random_matches * 1.0 / (double)trials;
-  printf(" fpp %3.5f (estimated) \n", fpp);
-  double bpe = (double)xor16_size_in_bytes(&filter) * 8.0 / (double)size;
-  printf(" bits per entry %3.2f\n", bpe);
-  printf(" bits per entry %3.2f (theoretical lower bound)\n", - log(fpp)/log(2));
-  printf(" efficiency ratio %3.3f \n", bpe /(- log(fpp)/log(2)));
+  report(size, &filter, gen_xor16_contain, gen_xor16_size_in_bytes);
+  
   xor16_free(&filter);
   free(big_set);
   return true;
@@ -233,22 +208,8 @@ bool testbinaryfuse8(size_t size) {
     }
   }
 
-  size_t random_matches = 0;
-  size_t trials = 10000000;
-  for (size_t i = 0; i < trials; i++) {
-    uint64_t random_key = ((uint64_t)rand() << 32U) + (uint64_t)rand();
-    if (binary_fuse8_contain(random_key, &filter)) {
-      if (random_key >= size) {
-        random_matches++;
-      }
-    }
-  }
-  double fpp = (double)random_matches * 1.0 / (double)trials;
-  printf(" fpp %3.5f (estimated) \n", fpp);
-  double bpe = (double)binary_fuse8_size_in_bytes(&filter) * 8.0 / (double)size;
-  printf(" bits per entry %3.2f\n", bpe);
-  printf(" bits per entry %3.2f (theoretical lower bound)\n", - log(fpp)/log(2));
-  printf(" efficiency ratio %3.3f \n", bpe /(- log(fpp)/log(2)));
+  report(size, &filter, gen_binary_fuse8_contain, gen_binary_fuse8_size_in_bytes);
+  
   binary_fuse8_free(&filter);
   free(big_set);
   return true;
@@ -287,22 +248,8 @@ bool testbinaryfuse16(size_t size) {
     }
   }
 
-  size_t random_matches = 0;
-  size_t trials = 10000000;
-  for (size_t i = 0; i < trials; i++) {
-    uint64_t random_key = ((uint64_t)rand() << 32U) + (uint64_t)rand();
-    if (binary_fuse16_contain(random_key, &filter)) {
-      if (random_key >= size) {
-        random_matches++;
-      }
-    }
-  }
-  double fpp = (double)random_matches * 1.0 / (double)trials;
-  printf(" fpp %3.5f (estimated) \n", fpp);
-  double bpe = (double)binary_fuse16_size_in_bytes(&filter) * 8.0 / (double)size;
-  printf(" bits per entry %3.2f\n", bpe);
-  printf(" bits per entry %3.2f (theoretical lower bound)\n", - log(fpp)/log(2));
-  printf(" efficiency ratio %3.3f \n", bpe /(- log(fpp)/log(2)));
+  report(size, &filter, gen_binary_fuse16_contain, gen_binary_fuse16_size_in_bytes);
+  
   binary_fuse16_free(&filter);
   free(big_set);
   return true;
@@ -332,22 +279,8 @@ bool testbinaryfuse8_dup(size_t size) {
     }
   }
 
-  size_t random_matches = 0;
-  size_t trials = 10000000;
-  for (size_t i = 0; i < trials; i++) {
-    uint64_t random_key = ((uint64_t)rand() << 32U) + (uint64_t)rand();
-    if (binary_fuse8_contain(random_key, &filter)) {
-      if (random_key >= size) {
-        random_matches++;
-      }
-    }
-  }
-  double fpp = (double)random_matches * 1.0 / (double)trials;
-  printf(" fpp %3.5f (estimated) \n", fpp);
-  double bpe = (double)binary_fuse8_size_in_bytes(&filter) * 8.0 / (double)size;
-  printf(" bits per entry %3.2f\n", bpe);
-  printf(" bits per entry %3.2f (theoretical lower bound)\n", - log(fpp)/log(2));
-  printf(" efficiency ratio %3.3f \n", bpe /(- log(fpp)/log(2)));
+  report(size, &filter, gen_binary_fuse8_contain, gen_binary_fuse8_size_in_bytes);
+  
   binary_fuse8_free(&filter);
   free(big_set);
   return true;
@@ -377,22 +310,8 @@ bool testbinaryfuse16_dup(size_t size) {
     }
   }
 
-  size_t random_matches = 0;
-  size_t trials = 10000000;
-  for (size_t i = 0; i < trials; i++) {
-    uint64_t random_key = ((uint64_t)rand() << 32U) + (uint64_t)rand();
-    if (binary_fuse16_contain(random_key, &filter)) {
-      if (random_key >= size) {
-        random_matches++;
-      }
-    }
-  }
-  double fpp = (double)random_matches * 1.0 / (double)trials;
-  printf(" fpp %3.5f (estimated) \n", fpp);
-  double bpe = (double)binary_fuse16_size_in_bytes(&filter) * 8.0 / (double)size;
-  printf(" bits per entry %3.2f\n", bpe);
-  printf(" bits per entry %3.2f (theoretical lower bound)\n", - log(fpp)/log(2));
-  printf(" efficiency ratio %3.3f \n", bpe /(- log(fpp)/log(2)));
+  report(size, &filter, gen_binary_fuse16_contain, gen_binary_fuse16_size_in_bytes);
+  
   binary_fuse16_free(&filter);
   free(big_set);
   return true;
