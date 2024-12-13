@@ -259,6 +259,7 @@ void failure_rate_binary_fuse16() {
     }
   }
   printf("failures %zu out of %zu\n\n", failure, total_trials);
+  binary_fuse16_free(&filter);
   free(big_set);
 }
 
