@@ -2,20 +2,101 @@
 #include "xorfilter.h"
 #include <assert.h>
 
-bool gen_xor8_contain(uint64_t key, const void* filter) { return xor8_contain(key, filter); }
-bool gen_xor16_contain(uint64_t key, const void* filter) { return xor16_contain(key, filter); }
-bool gen_binary_fuse8_contain(uint64_t key, const void* filter) { return binary_fuse8_contain(key, filter); }
-bool gen_binary_fuse16_contain(uint64_t key, const void* filter) { return binary_fuse16_contain(key, filter); }
+// generic function dispatch
 
-size_t gen_xor8_size_in_bytes(const void* filter) { return xor8_size_in_bytes(filter); }
-size_t gen_xor16_size_in_bytes(const void* filter) { return xor16_size_in_bytes(filter); }
-size_t gen_binary_fuse8_size_in_bytes(const void* filter) { return binary_fuse8_size_in_bytes(filter); }
-size_t gen_binary_fuse16_size_in_bytes(const void* filter) { return binary_fuse16_size_in_bytes(filter); }
+bool gen_xor8_allocate(uint32_t size, void *filter) { return xor8_allocate(size, filter); }
+bool gen_xor16_allocate(uint32_t size, void *filter) { return xor16_allocate(size, filter); }
+bool gen_binary_fuse8_allocate(uint32_t size, void *filter) { return binary_fuse8_allocate(size, filter); }
+bool gen_binary_fuse16_allocate(uint32_t size, void *filter) { return binary_fuse16_allocate(size, filter); }
 
-typedef bool (*contain_fpt)(uint64_t key, const void *filter);
+void gen_xor8_free(void *filter) { xor8_free(filter); }
+void gen_xor16_free(void *filter) { xor16_free(filter); }
+void gen_binary_fuse8_free(void *filter) { binary_fuse8_free(filter); }
+void gen_binary_fuse16_free(void *filter) { binary_fuse16_free(filter); }
+
+size_t gen_xor8_size_in_bytes(const void *filter) { return xor8_size_in_bytes(filter); }
+size_t gen_xor16_size_in_bytes(const void *filter) { return xor16_size_in_bytes(filter); }
+size_t gen_binary_fuse8_size_in_bytes(const void *filter) { return binary_fuse8_size_in_bytes(filter); }
+size_t gen_binary_fuse16_size_in_bytes(const void *filter) { return binary_fuse16_size_in_bytes(filter); }
+
+size_t gen_xor8_serialization_bytes(void *filter) { return xor8_serialization_bytes(filter); }
+size_t gen_xor16_serialization_bytes(void *filter) { return xor16_serialization_bytes(filter); }
+size_t gen_binary_fuse8_serialization_bytes(void *filter) { return binary_fuse8_serialization_bytes(filter); }
+size_t gen_binary_fuse16_serialization_bytes(void *filter) { return binary_fuse16_serialization_bytes(filter); }
+
+void gen_xor8_serialize(void *filter, char *buffer) { xor8_serialize(filter, buffer); }
+void gen_xor16_serialize(void *filter, char *buffer) { xor16_serialize(filter, buffer); }
+void gen_binary_fuse8_serialize(void *filter, char *buffer) { binary_fuse8_serialize(filter, buffer); }
+void gen_binary_fuse16_serialize(void *filter, char *buffer) { binary_fuse16_serialize(filter, buffer); }
+
+bool gen_xor8_deserialize(void *filter, const char *buffer) { return xor8_deserialize(filter, buffer); }
+bool gen_xor16_deserialize(void *filter, const char *buffer) { return xor16_deserialize(filter, buffer); }
+bool gen_binary_fuse8_deserialize(void *filter, const char *buffer) { return binary_fuse8_deserialize(filter, buffer); }
+bool gen_binary_fuse16_deserialize(void *filter, const char *buffer) { return binary_fuse16_deserialize(filter, buffer); }
+
+bool gen_xor8_populate(uint64_t *keys, uint32_t size, void *filter) { return xor8_populate(keys, size, filter); }
+bool gen_xor8_buffered_populate(uint64_t *keys, uint32_t size, void *filter) { return xor8_buffered_populate(keys, size, filter); }
+bool gen_xor16_populate(uint64_t *keys, uint32_t size, void *filter) { return xor16_populate(keys, size, filter); }
+bool gen_xor16_buffered_populate(uint64_t *keys, uint32_t size, void *filter) { return xor16_buffered_populate(keys, size, filter); }
+bool gen_binary_fuse8_populate(uint64_t *keys, uint32_t size, void *filter) { return binary_fuse8_populate(keys, size, filter); }
+bool gen_binary_fuse16_populate(uint64_t *keys, uint32_t size, void *filter) { return binary_fuse16_populate(keys, size, filter); }
+
+bool gen_xor8_contain(uint64_t key, const void *filter) { return xor8_contain(key, filter); }
+bool gen_xor16_contain(uint64_t key, const void *filter) { return xor16_contain(key, filter); }
+bool gen_binary_fuse8_contain(uint64_t key, const void *filter) { return binary_fuse8_contain(key, filter); }
+bool gen_binary_fuse16_contain(uint64_t key, const void *filter) { return binary_fuse16_contain(key, filter); }
+
+typedef bool (*allocate_fpt)(uint32_t size, void *filter);
+typedef void (*free_fpt)(void *filter);
 typedef size_t (*size_in_bytes_fpt)(const void *filter);
+typedef size_t (*serialization_bytes_fpt)(void *filter);
+typedef void (*serialize_fpt)(void *filter, char *buffer);
+typedef bool (*deserialize_fpt)(void *filter, const char *buffer);
+typedef bool (*populate_fpt)(uint64_t *keys, uint32_t size, void *filter);
+typedef bool (*contain_fpt)(uint64_t key, const void *filter);
 
-void report(size_t size, void* filter, contain_fpt contain, size_in_bytes_fpt size_in_bytes) {
+// generic test runner
+
+bool test(size_t size, size_t repeated_size, void *filter,
+          allocate_fpt allocate,
+          free_fpt free_filter,
+          size_in_bytes_fpt size_in_bytes,
+          serialization_bytes_fpt serialization_bytes,
+          serialize_fpt serialize,
+          deserialize_fpt deserialize,
+          populate_fpt populate,
+          contain_fpt contain) {
+  allocate((uint32_t)size, filter);
+  // we need some set of values
+  uint64_t *big_set = (uint64_t *)malloc(sizeof(uint64_t) * size);
+  for (size_t i = 0; i < size - repeated_size; i++) {
+    big_set[i] = i; // we use contiguous values
+  }
+  for (size_t i = 0; i < repeated_size; i++) {
+    big_set[size - i - 1] = i; // we use contiguous values
+  }
+  // we construct the filter
+  if(!populate(big_set, (uint32_t)size, filter)) { return false; }
+  for (size_t i = 0; i < size; i++) {
+    if (!contain(big_set[i], filter)) {
+      printf("bug!\n");
+      return false;
+    }
+  }
+
+  size_t buffer_size = serialization_bytes(filter);
+  char *buffer = (char*)malloc(buffer_size);
+  serialize(filter, buffer);
+  free_filter(filter);
+  deserialize(filter, buffer);
+  free(buffer);
+  for (size_t i = 0; i < size; i++) {
+    if (!contain(big_set[i], filter)) {
+      printf("bug!\n");
+      return false;
+    }
+  }
+  
   size_t random_matches = 0;
   size_t trials = 10000000;
   for (size_t i = 0; i < trials; i++) {
@@ -32,45 +113,23 @@ void report(size_t size, void* filter, contain_fpt contain, size_in_bytes_fpt si
   printf(" bits per entry %3.2f\n", bpe);
   printf(" bits per entry %3.2f (theoretical lower bound)\n", - log(fpp)/log(2));
   printf(" efficiency ratio %3.3f \n", bpe /(- log(fpp)/log(2)));
+  free_filter(filter);
+  free(big_set);
+  return true;
 }
 
 bool testbufferedxor8(size_t size) {
   printf("testing buffered xor8\n");
-
   xor8_t filter = {0}; // zero initialisation silences unitialized warning
-  xor8_allocate((uint32_t)size, &filter);
-  // we need some set of values
-  uint64_t *big_set = (uint64_t *)malloc(sizeof(uint64_t) * size);
-  for (size_t i = 0; i < size; i++) {
-    big_set[i] = i; // we use contiguous values
-  }
-  // we construct the filter
-  if(!xor8_buffered_populate(big_set, (uint32_t)size, &filter)) { return false; }
-  for (size_t i = 0; i < size; i++) {
-    if (!xor8_contain(big_set[i], &filter)) {
-      printf("bug!\n");
-      return false;
-    }
-  }
-
-  size_t buffer_size = xor8_serialization_bytes(&filter);
-  char *buffer = (char*)malloc(buffer_size);
-  xor8_serialize(&filter, buffer);
-  xor8_free(&filter);
-  xor8_deserialize(&filter, buffer);
-  free(buffer);
-  for (size_t i = 0; i < size; i++) {
-    if (!xor8_contain(big_set[i], &filter)) {
-      printf("bug!\n");
-      return false;
-    }
-  }
-  
-  report(size, &filter, gen_xor8_contain, gen_xor8_size_in_bytes);
-  
-  xor8_free(&filter);
-  free(big_set);
-  return true;
+  return test(size, 0, &filter,
+              gen_xor8_allocate,
+              gen_xor8_free,
+              gen_xor8_size_in_bytes,
+              gen_xor8_serialization_bytes,
+              gen_xor8_serialize,
+              gen_xor8_deserialize,
+              gen_xor8_buffered_populate,
+              gen_xor8_contain);
 }
 
 
@@ -78,154 +137,59 @@ bool testxor8(size_t size) {
   printf("testing xor8\n");
 
   xor8_t filter = {0}; // zero initialisation silences unitialized warning
-  xor8_allocate((uint32_t)size, &filter);
-  // we need some set of values
-  uint64_t *big_set = (uint64_t *)malloc(sizeof(uint64_t) * size);
-  for (size_t i = 0; i < size; i++) {
-    big_set[i] = i; // we use contiguous values
-  }
-  // we construct the filter
-  if(!xor8_populate(big_set, (uint32_t)size, &filter)) { return false; }
-  for (size_t i = 0; i < size; i++) {
-    if (!xor8_contain(big_set[i], &filter)) {
-      printf("bug!\n");
-      return false;
-    }
-  }
-
-  size_t buffer_size = xor8_serialization_bytes(&filter);
-  char *buffer = (char*)malloc(buffer_size);
-  xor8_serialize(&filter, buffer);
-  xor8_free(&filter);
-  xor8_deserialize(&filter, buffer);
-  free(buffer);
-  for (size_t i = 0; i < size; i++) {
-    if (!xor8_contain(big_set[i], &filter)) {
-      printf("bug!\n");
-      return false;
-    }
-  }
-
-  report(size, &filter, gen_xor8_contain, gen_xor8_size_in_bytes);
-  
-  xor8_free(&filter);
-  free(big_set);
-  return true;
+  return test(size, 0, &filter,
+              gen_xor8_allocate,
+              gen_xor8_free,
+              gen_xor8_size_in_bytes,
+              gen_xor8_serialization_bytes,
+              gen_xor8_serialize,
+              gen_xor8_deserialize,
+              gen_xor8_populate,
+              gen_xor8_contain);
 }
 
 bool testxor16(size_t size) {
   printf("testing xor16\n");
   xor16_t filter = {0}; // zero initialisation silences unitialized warning
-  xor16_allocate((uint32_t)size, &filter);
-  // we need some set of values
-  uint64_t *big_set = (uint64_t *)malloc(sizeof(uint64_t) * size);
-  for (size_t i = 0; i < size; i++) {
-    big_set[i] = i; // we use contiguous values
-  }
-  // we construct the filter
-  if(!xor16_populate(big_set, (uint32_t)size, &filter)) { return false; }
-  for (size_t i = 0; i < size; i++) {
-    if (!xor16_contain(big_set[i], &filter)) {
-      printf("bug!\n");
-      return false;
-    }
-  }
-
-  size_t buffer_size = xor16_serialization_bytes(&filter);
-  char *buffer = (char*)malloc(buffer_size);
-  xor16_serialize(&filter, buffer);
-  xor16_free(&filter);
-  xor16_deserialize(&filter, buffer);
-  free(buffer);
-  for (size_t i = 0; i < size; i++) {
-    if (!xor16_contain(big_set[i], &filter)) {
-      printf("bug!\n");
-      return false;
-    }
-  }
-
-  report(size, &filter, gen_xor16_contain, gen_xor16_size_in_bytes);
-  
-  xor16_free(&filter);
-  free(big_set);
-  return true;
+  return test(size, 0, &filter,
+              gen_xor16_allocate,
+              gen_xor16_free,
+              gen_xor16_size_in_bytes,
+              gen_xor16_serialization_bytes,
+              gen_xor16_serialize,
+              gen_xor16_deserialize,
+              gen_xor16_populate,
+              gen_xor16_contain);
 }
+
 
 
 bool testbufferedxor16(size_t size) {
   printf("testing buffered xor16\n");
   xor16_t filter = {0}; // zero initialisation silences unitialized warning
-  xor16_allocate((uint32_t)size, &filter);
-  // we need some set of values
-  uint64_t *big_set = (uint64_t *)malloc(sizeof(uint64_t) * size);
-  for (size_t i = 0; i < size; i++) {
-    big_set[i] = i; // we use contiguous values
-  }
-  // we construct the filter
-  if(!xor16_buffered_populate(big_set, (uint32_t)size, &filter)) { return false; }
-  for (size_t i = 0; i < size; i++) {
-    if (!xor16_contain(big_set[i], &filter)) {
-      printf("bug!\n");
-      return false;
-    }
-  }
-
-  size_t buffer_size = xor16_serialization_bytes(&filter);
-  char *buffer = (char*)malloc(buffer_size);
-  xor16_serialize(&filter, buffer);
-  xor16_free(&filter);
-  xor16_deserialize(&filter, buffer);
-  free(buffer);
-  for (size_t i = 0; i < size; i++) {
-    if (!xor16_contain(big_set[i], &filter)) {
-      printf("bug!\n");
-      return false;
-    }
-  }
-
-  report(size, &filter, gen_xor16_contain, gen_xor16_size_in_bytes);
-  
-  xor16_free(&filter);
-  free(big_set);
-  return true;
+  return test(size, 0, &filter,
+              gen_xor16_allocate,
+              gen_xor16_free,
+              gen_xor16_size_in_bytes,
+              gen_xor16_serialization_bytes,
+              gen_xor16_serialize,
+              gen_xor16_deserialize,
+              gen_xor16_buffered_populate,
+              gen_xor16_contain);
 }
 
 bool testbinaryfuse8(size_t size) {
   printf("testing binary fuse8 with size %zu\n", size);
   binary_fuse8_t filter = {0}; // zero initialisation silences unitialized warning
-  binary_fuse8_allocate((uint32_t)size, &filter);
-  // we need some set of values
-  uint64_t *big_set = (uint64_t *)malloc(sizeof(uint64_t) * size);
-  for (size_t i = 0; i < size; i++) {
-    big_set[i] = i; // we use contiguous values
-  }
-  // we construct the filter
-  if(!binary_fuse8_populate(big_set, (uint32_t)size, &filter)) { printf("failure to populate\n"); return false; }
-  for (size_t i = 0; i < size; i++) {
-    if (!binary_fuse8_contain(big_set[i], &filter)) {
-      printf("bug!\n");
-      return false;
-    }
-  }
-
-  size_t buffer_size = binary_fuse8_serialization_bytes(&filter);
-  char *buffer = (char*)malloc(buffer_size);
-  binary_fuse8_serialize(&filter, buffer);
-  binary_fuse8_free(&filter);
-  binary_fuse8_deserialize(&filter, buffer);
-  free(buffer);
-  for (size_t i = 0; i < size; i++) {
-    if (!binary_fuse8_contain(big_set[i], &filter)) {
-      printf("bug!\n");
-      return false;
-    }
-  }
-
-  report(size, &filter, gen_binary_fuse8_contain, gen_binary_fuse8_size_in_bytes);
-  
-  binary_fuse8_free(&filter);
-  free(big_set);
-  return true;
+  return test(size, 0, &filter,
+              gen_binary_fuse8_allocate,
+              gen_binary_fuse8_free,
+              gen_binary_fuse8_size_in_bytes,
+              gen_binary_fuse8_serialization_bytes,
+              gen_binary_fuse8_serialize,
+              gen_binary_fuse8_deserialize,
+              gen_binary_fuse8_populate,
+              gen_binary_fuse8_contain);
 }
 
 
@@ -233,39 +197,15 @@ bool testbinaryfuse8(size_t size) {
 bool testbinaryfuse16(size_t size) {
   printf("testing binary fuse16\n");
   binary_fuse16_t filter = {0}; // zero initialisation silences unitialized warning
-  binary_fuse16_allocate((uint32_t)size, &filter);
-  // we need some set of values
-  uint64_t *big_set = (uint64_t *)malloc(sizeof(uint64_t) * size);
-  for (size_t i = 0; i < size; i++) {
-    big_set[i] = i; // we use contiguous values
-  }
-  // we construct the filter
-  if(!binary_fuse16_populate(big_set, (uint32_t)size, &filter)) {  printf("failure to populate\n"); return false; }
-  for (size_t i = 0; i < size; i++) {
-    if (!binary_fuse16_contain(big_set[i], &filter)) {
-      printf("bug!\n");
-      return false;
-    }
-  }
-
-  size_t buffer_size = binary_fuse16_serialization_bytes(&filter);
-  char *buffer = (char*)malloc(buffer_size);
-  binary_fuse16_serialize(&filter, buffer);
-  binary_fuse16_free(&filter);
-  binary_fuse16_deserialize(&filter, buffer);
-  free(buffer);
-  for (size_t i = 0; i < size; i++) {
-    if (!binary_fuse16_contain(big_set[i], &filter)) {
-      printf("bug!\n");
-      return false;
-    }
-  }
-
-  report(size, &filter, gen_binary_fuse16_contain, gen_binary_fuse16_size_in_bytes);
-  
-  binary_fuse16_free(&filter);
-  free(big_set);
-  return true;
+  return test(size, 0, &filter,
+              gen_binary_fuse16_allocate,
+              gen_binary_fuse16_free,
+              gen_binary_fuse16_size_in_bytes,
+              gen_binary_fuse16_serialization_bytes,
+              gen_binary_fuse16_serialize,
+              gen_binary_fuse16_deserialize,
+              gen_binary_fuse16_populate,
+              gen_binary_fuse16_contain);
 }
 
 
@@ -273,30 +213,15 @@ bool testbinaryfuse16(size_t size) {
 bool testbinaryfuse8_dup(size_t size) {
   printf("testing binary fuse8 with duplicates\n");
   binary_fuse8_t filter = {0}; // zero initialisation silences unitialized warning
-  binary_fuse8_allocate((uint32_t)size, &filter);
-  // we need some set of values
-  uint64_t *big_set = (uint64_t *)malloc(sizeof(uint64_t) * size);
-  size_t repeated_size = 10;
-  for (size_t i = 0; i < size - repeated_size; i++) {
-    big_set[i] = i; // we use contiguous values
-  }
-  for (size_t i = 0; i < repeated_size; i++) {
-    big_set[size - i - 1] = i; // we use contiguous values
-  }
-  // we construct the filter
-  if(!binary_fuse8_populate(big_set, (uint32_t)size, &filter)) { return false; }
-  for (size_t i = 0; i < size; i++) {
-    if (!binary_fuse8_contain(big_set[i], &filter)) {
-      printf("bug!\n");
-      return false;
-    }
-  }
-
-  report(size, &filter, gen_binary_fuse8_contain, gen_binary_fuse8_size_in_bytes);
-  
-  binary_fuse8_free(&filter);
-  free(big_set);
-  return true;
+  return test(size, 10, &filter,
+              gen_binary_fuse8_allocate,
+              gen_binary_fuse8_free,
+              gen_binary_fuse8_size_in_bytes,
+              gen_binary_fuse8_serialization_bytes,
+              gen_binary_fuse8_serialize,
+              gen_binary_fuse8_deserialize,
+              gen_binary_fuse8_populate,
+              gen_binary_fuse8_contain);
 }
 
 
@@ -304,30 +229,15 @@ bool testbinaryfuse8_dup(size_t size) {
 bool testbinaryfuse16_dup(size_t size) {
   printf("testing binary fuse16 with duplicates\n");
   binary_fuse16_t filter = {0}; // zero initialisation silences unitialized warning
-  binary_fuse16_allocate((uint32_t)size, &filter);
-  // we need some set of values
-  uint64_t *big_set = (uint64_t *)malloc(sizeof(uint64_t) * size);
-  size_t repeated_size = 10;
-  for (size_t i = 0; i < size - repeated_size; i++) {
-    big_set[i] = i; // we use contiguous values
-  }
-  for (size_t i = 0; i < repeated_size; i++) {
-    big_set[size - i - 1] = i; // we use contiguous values
-  }
-  // we construct the filter
-  if(!binary_fuse16_populate(big_set, (uint32_t)size, &filter)) { return false; }
-  for (size_t i = 0; i < size; i++) {
-    if (!binary_fuse16_contain(big_set[i], &filter)) {
-      printf("bug!\n");
-      return false;
-    }
-  }
-
-  report(size, &filter, gen_binary_fuse16_contain, gen_binary_fuse16_size_in_bytes);
-  
-  binary_fuse16_free(&filter);
-  free(big_set);
-  return true;
+  return test(size, 10, &filter,
+              gen_binary_fuse16_allocate,
+              gen_binary_fuse16_free,
+              gen_binary_fuse16_size_in_bytes,
+              gen_binary_fuse16_serialization_bytes,
+              gen_binary_fuse16_serialize,
+              gen_binary_fuse16_deserialize,
+              gen_binary_fuse16_populate,
+              gen_binary_fuse16_contain);
 }
 
 void failure_rate_binary_fuse16() {
