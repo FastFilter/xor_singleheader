@@ -53,6 +53,19 @@ bool testbufferedxor8(size_t size) {
     }
   }
 
+  size_t buffer_size = xor8_serialization_bytes(&filter);
+  char *buffer = (char*)malloc(buffer_size);
+  xor8_serialize(&filter, buffer);
+  xor8_free(&filter);
+  xor8_deserialize(&filter, buffer);
+  free(buffer);
+  for (size_t i = 0; i < size; i++) {
+    if (!xor8_contain(big_set[i], &filter)) {
+      printf("bug!\n");
+      return false;
+    }
+  }
+  
   report(size, &filter, gen_xor8_contain, gen_xor8_size_in_bytes);
   
   xor8_free(&filter);
@@ -64,7 +77,7 @@ bool testbufferedxor8(size_t size) {
 bool testxor8(size_t size) {
   printf("testing xor8\n");
 
-  xor8_t filter;
+  xor8_t filter = {0}; // zero initialisation silences unitialized warning
   xor8_allocate((uint32_t)size, &filter);
   // we need some set of values
   uint64_t *big_set = (uint64_t *)malloc(sizeof(uint64_t) * size);
@@ -102,7 +115,7 @@ bool testxor8(size_t size) {
 
 bool testxor16(size_t size) {
   printf("testing xor16\n");
-  xor16_t filter;
+  xor16_t filter = {0}; // zero initialisation silences unitialized warning
   xor16_allocate((uint32_t)size, &filter);
   // we need some set of values
   uint64_t *big_set = (uint64_t *)malloc(sizeof(uint64_t) * size);
@@ -141,7 +154,7 @@ bool testxor16(size_t size) {
 
 bool testbufferedxor16(size_t size) {
   printf("testing buffered xor16\n");
-  xor16_t filter;
+  xor16_t filter = {0}; // zero initialisation silences unitialized warning
   xor16_allocate((uint32_t)size, &filter);
   // we need some set of values
   uint64_t *big_set = (uint64_t *)malloc(sizeof(uint64_t) * size);
@@ -179,7 +192,7 @@ bool testbufferedxor16(size_t size) {
 
 bool testbinaryfuse8(size_t size) {
   printf("testing binary fuse8 with size %zu\n", size);
-  binary_fuse8_t filter;
+  binary_fuse8_t filter = {0}; // zero initialisation silences unitialized warning
   binary_fuse8_allocate((uint32_t)size, &filter);
   // we need some set of values
   uint64_t *big_set = (uint64_t *)malloc(sizeof(uint64_t) * size);
@@ -219,7 +232,7 @@ bool testbinaryfuse8(size_t size) {
 
 bool testbinaryfuse16(size_t size) {
   printf("testing binary fuse16\n");
-  binary_fuse16_t filter;
+  binary_fuse16_t filter = {0}; // zero initialisation silences unitialized warning
   binary_fuse16_allocate((uint32_t)size, &filter);
   // we need some set of values
   uint64_t *big_set = (uint64_t *)malloc(sizeof(uint64_t) * size);
@@ -259,7 +272,7 @@ bool testbinaryfuse16(size_t size) {
 
 bool testbinaryfuse8_dup(size_t size) {
   printf("testing binary fuse8 with duplicates\n");
-  binary_fuse8_t filter;
+  binary_fuse8_t filter = {0}; // zero initialisation silences unitialized warning
   binary_fuse8_allocate((uint32_t)size, &filter);
   // we need some set of values
   uint64_t *big_set = (uint64_t *)malloc(sizeof(uint64_t) * size);
@@ -290,7 +303,7 @@ bool testbinaryfuse8_dup(size_t size) {
 
 bool testbinaryfuse16_dup(size_t size) {
   printf("testing binary fuse16 with duplicates\n");
-  binary_fuse16_t filter;
+  binary_fuse16_t filter = {0}; // zero initialisation silences unitialized warning
   binary_fuse16_allocate((uint32_t)size, &filter);
   // we need some set of values
   uint64_t *big_set = (uint64_t *)malloc(sizeof(uint64_t) * size);
