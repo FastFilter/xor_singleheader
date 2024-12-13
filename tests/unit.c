@@ -120,7 +120,7 @@ bool test(size_t size, size_t repeated_size, void *filter,
 
 bool testbufferedxor8(size_t size) {
   printf("testing buffered xor8\n");
-  xor8_t filter = {0}; // zero initialisation silences unitialized warning
+  xor8_t filter;
   return test(size, 0, &filter,
               gen_xor8_allocate,
               gen_xor8_free,
@@ -135,8 +135,7 @@ bool testbufferedxor8(size_t size) {
 
 bool testxor8(size_t size) {
   printf("testing xor8\n");
-
-  xor8_t filter = {0}; // zero initialisation silences unitialized warning
+  xor8_t filter;
   return test(size, 0, &filter,
               gen_xor8_allocate,
               gen_xor8_free,
@@ -150,7 +149,7 @@ bool testxor8(size_t size) {
 
 bool testxor16(size_t size) {
   printf("testing xor16\n");
-  xor16_t filter = {0}; // zero initialisation silences unitialized warning
+  xor16_t filter;
   return test(size, 0, &filter,
               gen_xor16_allocate,
               gen_xor16_free,
@@ -166,7 +165,7 @@ bool testxor16(size_t size) {
 
 bool testbufferedxor16(size_t size) {
   printf("testing buffered xor16\n");
-  xor16_t filter = {0}; // zero initialisation silences unitialized warning
+  xor16_t filter;
   return test(size, 0, &filter,
               gen_xor16_allocate,
               gen_xor16_free,
@@ -178,10 +177,10 @@ bool testbufferedxor16(size_t size) {
               gen_xor16_contain);
 }
 
-bool testbinaryfuse8(size_t size) {
-  printf("testing binary fuse8 with size %zu\n", size);
-  binary_fuse8_t filter = {0}; // zero initialisation silences unitialized warning
-  return test(size, 0, &filter,
+bool testbinaryfuse8(size_t size, size_t repeated_size) {
+  printf("testing binary fuse8 with size %zu and %zu duplicates\n", size, repeated_size);
+  binary_fuse8_t filter;
+  return test(size, repeated_size, &filter,
               gen_binary_fuse8_allocate,
               gen_binary_fuse8_free,
               gen_binary_fuse8_size_in_bytes,
@@ -194,42 +193,10 @@ bool testbinaryfuse8(size_t size) {
 
 
 
-bool testbinaryfuse16(size_t size) {
-  printf("testing binary fuse16\n");
-  binary_fuse16_t filter = {0}; // zero initialisation silences unitialized warning
-  return test(size, 0, &filter,
-              gen_binary_fuse16_allocate,
-              gen_binary_fuse16_free,
-              gen_binary_fuse16_size_in_bytes,
-              gen_binary_fuse16_serialization_bytes,
-              gen_binary_fuse16_serialize,
-              gen_binary_fuse16_deserialize,
-              gen_binary_fuse16_populate,
-              gen_binary_fuse16_contain);
-}
-
-
-
-bool testbinaryfuse8_dup(size_t size) {
-  printf("testing binary fuse8 with duplicates\n");
-  binary_fuse8_t filter = {0}; // zero initialisation silences unitialized warning
-  return test(size, 10, &filter,
-              gen_binary_fuse8_allocate,
-              gen_binary_fuse8_free,
-              gen_binary_fuse8_size_in_bytes,
-              gen_binary_fuse8_serialization_bytes,
-              gen_binary_fuse8_serialize,
-              gen_binary_fuse8_deserialize,
-              gen_binary_fuse8_populate,
-              gen_binary_fuse8_contain);
-}
-
-
-
-bool testbinaryfuse16_dup(size_t size) {
-  printf("testing binary fuse16 with duplicates\n");
-  binary_fuse16_t filter = {0}; // zero initialisation silences unitialized warning
-  return test(size, 10, &filter,
+bool testbinaryfuse16(size_t size, size_t repeated_size) {
+  printf("testing binary fuse16 with size %zu and %zu duplicates\n", size, repeated_size);
+  binary_fuse16_t filter;
+  return test(size, repeated_size, &filter,
               gen_binary_fuse16_allocate,
               gen_binary_fuse16_free,
               gen_binary_fuse16_size_in_bytes,
@@ -267,13 +234,13 @@ int main() {
   failure_rate_binary_fuse16();
   for(size_t size = 1000; size <= 1000000; size *= 300) {
     printf("== size = %zu \n", size);
-    if(!testbinaryfuse8(size)) { abort(); }
+    if(!testbinaryfuse8(size, 0)) { abort(); }
     printf("\n");
-    if(!testbinaryfuse16(size)) { abort(); }
+    if(!testbinaryfuse16(size, 0)) { abort(); }
     printf("\n");
-    if(!testbinaryfuse8_dup(size)) { abort(); }
+    if(!testbinaryfuse8(size, 10)) { abort(); }
     printf("\n");
-    if(!testbinaryfuse16_dup(size)) { abort(); }
+    if(!testbinaryfuse16(size, 10)) { abort(); }
     printf("\n");
     if(!testbufferedxor8(size)) { abort(); }
     printf("\n");
@@ -287,10 +254,10 @@ int main() {
   }
 
   // test small edge-case binary fuse input sizes
-  if(!testbinaryfuse8(0)) { abort(); }
-  if(!testbinaryfuse8(1)) { abort(); }
-  if(!testbinaryfuse8(2)) { abort(); }
-  if(!testbinaryfuse16(0)) { abort(); }
-  if(!testbinaryfuse16(1)) { abort(); }
-  if(!testbinaryfuse16(2)) { abort(); }
+  if(!testbinaryfuse8(0, 0)) { abort(); }
+  if(!testbinaryfuse8(1, 0)) { abort(); }
+  if(!testbinaryfuse8(2, 0)) { abort(); }
+  if(!testbinaryfuse16(0, 0)) { abort(); }
+  if(!testbinaryfuse16(1, 0)) { abort(); }
+  if(!testbinaryfuse16(2, 0)) { abort(); }
 }
