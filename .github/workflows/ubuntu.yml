@@ -24,7 +24,8 @@ jobs:
           cd build &&
           cmake .. -DCMAKE_INSTALL_PREFIX:PATH=destination &&
           cmake --build .   &&
-          env \ # force failure if sanitizers report any warnings
+          # force failure if sanitizers report any warnings
+          env \ 
             ASAN_OPTIONS='halt_on_error=1:abort_on_error=1:print_summary=1' \
             UBSAN_OPTIONS='halt_on_error=1:abort_on_error=1:print_summary=1:print_stacktrace=1'  \
             ctest --output-on-failure  &&
