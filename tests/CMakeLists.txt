@@ -6,5 +6,7 @@ target_link_libraries(unit PRIVATE xor_singleheader)
 # prevent new warning creeping in Matches Makefile
 target_compile_options(unit PRIVATE -g -O2
   -fsanitize=address,leak,undefined
-  -Wall -Wextra -Wshadow  -Wcast-qual -Wconversion -Wsign-conversion -Werror
-  -lm)
+  -Wall -Wextra -Wshadow  -Wcast-qual -Wconversion -Wsign-conversion -Werror)
+
+# sanitsizers need to be specified at link time as well
+target_link_options(unit PRIVATE -fsanitize=address,leak,undefined)
