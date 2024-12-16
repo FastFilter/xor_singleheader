@@ -61,7 +61,7 @@ bool test(size_t size, size_t repeated_size, void *filter,
   deserialize(filter, buffer);
   free(buffer);
   for (size_t i = 0; i < size; i++) {
-    if (!contain(big_set[i], filter)) {
+    if (!(contain)(big_set[i], filter)) {
       printf("bug!\n");
       return false;
     }
