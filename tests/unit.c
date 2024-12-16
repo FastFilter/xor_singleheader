@@ -2,33 +2,41 @@
 #include "xorfilter.h"
 #include <assert.h>
 
-// generic proxy for filter, important that this is a struct, not void
-// as § 6.2.5..28: "All pointers to structure types shall have the
-// same representation and alignment requirements as each other"
-typedef struct { int dummy_; } gen_filter; 
+#define FNAM(type, action) type##_##action
+#define GFNAM(type, action) type##_##action##_gen
 
-typedef bool (*allocate_fpt)(uint32_t size, gen_filter *filter);
-typedef void (*free_fpt)(gen_filter *filter);
-typedef size_t (*size_in_bytes_fpt)(const gen_filter *filter);
-typedef size_t (*serialization_bytes_fpt)(gen_filter *filter);
-typedef void (*serialize_fpt)(gen_filter *filter, char *buffer);
-typedef bool (*deserialize_fpt)(gen_filter *filter, const char *buffer);
-typedef bool (*populate_fpt)(uint64_t *keys, uint32_t size, gen_filter *filter);
-typedef bool (*contain_fpt)(uint64_t key, const gen_filter *filter);
+#define F1(t, a, rt, t1, p1) rt GFNAM(t, a)(t1 p1) { return FNAM(t, a)(p1); }
+#define F2(t, a, rt, t1, p1, t2, p2) rt GFNAM(t, a)(t1 p1, t2 p2) { return FNAM(t, a)(p1, p2); }
+#define F3(t, a, rt, t1, p1, t2, p2, t3, p3) rt GFNAM(t, a)(t1 p1, t2 p2, t3 p3) { return FNAM(t, a)(p1, p2, p3); }
 
-typedef void (*gfp)(void); // generic function pointer
+#define GEN_THUNKS(ftype)                                                                          \
+  F2(ftype, allocate, bool, uint32_t, size, void*, filter)                                         \
+  F1(ftype, free, void, void*, filter)                                                             \
+  F1(ftype, size_in_bytes, size_t, const void*, filter)                                            \
+  F1(ftype, serialization_bytes, size_t, void*, filter)                                            \
+  F2(ftype, serialize, void, void*, filter, char*, buffer)                                         \
+  F2(ftype, deserialize, bool, void*, filter, const char*, buffer)                                 \
+  F3(ftype, populate, bool, uint64_t*, keys, uint32_t, size, void*, filter)                        \
+  F2(ftype, contain, bool, uint64_t, key, const void*, filter)
 
-// generic test runner
+GEN_THUNKS(xor8)
+GEN_THUNKS(xor16)
+GEN_THUNKS(binary_fuse8)
+GEN_THUNKS(binary_fuse16)
+
+F3(xor8, buffered_populate, bool, uint64_t*, keys, uint32_t, size, void*, filter)
+F3(xor16, buffered_populate, bool, uint64_t*, keys, uint32_t, size, void*, filter)
+
 bool test(size_t size, size_t repeated_size, void *filter,
-          gfp allocate,
-          gfp free_filter,
-          gfp size_in_bytes,
-          gfp serialization_bytes,
-          gfp serialize,
-          gfp deserialize,
-          gfp populate,
-          gfp contain) {
-  ((allocate_fpt)allocate)((uint32_t)size, filter);
+          bool(*allocate)(uint32_t size, void *filter),
+          void (*free_filter)(void *filter),
+          size_t (*size_in_bytes)(const void *filter),
+          size_t (*serialization_bytes)(void *filter),
+          void (*serialize)(void *filter, char *buffer),
+          bool (*deserialize)(void *filter, const char *buffer),
+          bool (*populate)(uint64_t *keys, uint32_t size, void *filter),
+          bool (*contain)(uint64_t key, const void *filter)) {
+  allocate((uint32_t)size, filter);
   // we need some set of values
   uint64_t *big_set = (uint64_t *)malloc(sizeof(uint64_t) * size);
   for (size_t i = 0; i < size - repeated_size; i++) {
@@ -38,22 +46,22 @@ bool test(size_t size, size_t repeated_size, void *filter,
     big_set[size - i - 1] = i; // we use contiguous values
   }
   // we construct the filter
-  if(!((populate_fpt)populate)(big_set, (uint32_t)size, filter)) { return false; }
+  if(!populate(big_set, (uint32_t)size, filter)) { return false; }
   for (size_t i = 0; i < size; i++) {
-    if (!((contain_fpt)contain)(big_set[i], filter)) {
+    if (!contain(big_set[i], filter)) {
       printf("bug!\n");
       return false;
     }
   }
 
-  size_t buffer_size = ((serialization_bytes_fpt)serialization_bytes)(filter);
+  size_t buffer_size = serialization_bytes(filter);
   char *buffer = (char*)malloc(buffer_size);
-  ((serialize_fpt)serialize)(filter, buffer);
-  ((free_fpt)free_filter)(filter);
-  ((deserialize_fpt)deserialize)(filter, buffer);
+  serialize(filter, buffer);
+  free_filter(filter);
+  deserialize(filter, buffer);
   free(buffer);
   for (size_t i = 0; i < size; i++) {
-    if (!((contain_fpt)contain)(big_set[i], filter)) {
+    if (!(contain)(big_set[i], filter)) {
       printf("bug!\n");
       return false;
     }
@@ -63,7 +71,7 @@ bool test(size_t size, size_t repeated_size, void *filter,
   size_t trials = 10000000;
   for (size_t i = 0; i < trials; i++) {
     uint64_t random_key = ((uint64_t)rand() << 32U) + (uint64_t)rand();
-    if (((contain_fpt)contain)(random_key, filter)) {
+    if (contain(random_key, filter)) {
       if (random_key >= size) {
         random_matches++;
       }
@@ -71,11 +79,11 @@ bool test(size_t size, size_t repeated_size, void *filter,
   }
   double fpp = (double)random_matches * 1.0 / (double)trials;
   printf(" fpp %3.5f (estimated) \n", fpp);
-  double bpe = (double)((size_in_bytes_fpt)size_in_bytes)(filter) * 8.0 / (double)size;
+  double bpe = (double)size_in_bytes(filter) * 8.0 / (double)size;
   printf(" bits per entry %3.2f\n", bpe);
   printf(" bits per entry %3.2f (theoretical lower bound)\n", - log(fpp)/log(2));
   printf(" efficiency ratio %3.3f \n", bpe /(- log(fpp)/log(2)));
-  ((free_fpt)free_filter)(filter);
+  free_filter(filter);
   free(big_set);
   return true;
 }
@@ -84,14 +92,14 @@ bool testbufferedxor8(size_t size) {
   printf("testing buffered xor8\n");
   xor8_t filter;
   return test(size, 0, &filter,
-              (gfp)xor8_allocate,
-              (gfp)xor8_free,
-              (gfp)xor8_size_in_bytes,
-              (gfp)xor8_serialization_bytes,
-              (gfp)xor8_serialize,
-              (gfp)xor8_deserialize,
-              (gfp)xor8_buffered_populate,
-              (gfp)xor8_contain);
+              xor8_allocate_gen,
+              xor8_free_gen,
+              xor8_size_in_bytes_gen,
+              xor8_serialization_bytes_gen,
+              xor8_serialize_gen,
+              xor8_deserialize_gen,
+              xor8_buffered_populate_gen,
+              xor8_contain_gen);
 }
 
 
@@ -99,28 +107,28 @@ bool testxor8(size_t size) {
   printf("testing xor8\n");
   xor8_t filter;
   return test(size, 0, &filter,
-              (gfp)xor8_allocate,
-              (gfp)xor8_free,
-              (gfp)xor8_size_in_bytes,
-              (gfp)xor8_serialization_bytes,
-              (gfp)xor8_serialize,
-              (gfp)xor8_deserialize,
-              (gfp)xor8_populate,
-              (gfp)xor8_contain);
+              xor8_allocate_gen,
+              xor8_free_gen,
+              xor8_size_in_bytes_gen,
+              xor8_serialization_bytes_gen,
+              xor8_serialize_gen,
+              xor8_deserialize_gen,
+              xor8_populate_gen,
+              xor8_contain_gen);
 }
 
 bool testxor16(size_t size) {
   printf("testing xor16\n");
   xor16_t filter;
   return test(size, 0, &filter,
-              (gfp)xor16_allocate,
-              (gfp)xor16_free,
-              (gfp)xor16_size_in_bytes,
-              (gfp)xor16_serialization_bytes,
-              (gfp)xor16_serialize,
-              (gfp)xor16_deserialize,
-              (gfp)xor16_populate,
-              (gfp)xor16_contain);
+              xor16_allocate_gen,
+              xor16_free_gen,
+              xor16_size_in_bytes_gen,
+              xor16_serialization_bytes_gen,
+              xor16_serialize_gen,
+              xor16_deserialize_gen,
+              xor16_populate_gen,
+              xor16_contain_gen);
 }
 
 
@@ -129,28 +137,28 @@ bool testbufferedxor16(size_t size) {
   printf("testing buffered xor16\n");
   xor16_t filter;
   return test(size, 0, &filter,
-              (gfp)xor16_allocate,
-              (gfp)xor16_free,
-              (gfp)xor16_size_in_bytes,
-              (gfp)xor16_serialization_bytes,
-              (gfp)xor16_serialize,
-              (gfp)xor16_deserialize,
-              (gfp)xor16_buffered_populate,
-              (gfp)xor16_contain);
+              xor16_allocate_gen,
+              xor16_free_gen,
+              xor16_size_in_bytes_gen,
+              xor16_serialization_bytes_gen,
+              xor16_serialize_gen,
+              xor16_deserialize_gen,
+              xor16_buffered_populate_gen,
+              xor16_contain_gen);
 }
 
 bool testbinaryfuse8(size_t size, size_t repeated_size) {
   printf("testing binary fuse8 with size %zu and %zu duplicates\n", size, repeated_size);
   binary_fuse8_t filter;
   return test(size, repeated_size, &filter,
-              (gfp)binary_fuse8_allocate,
-              (gfp)binary_fuse8_free,
-              (gfp)binary_fuse8_size_in_bytes,
-              (gfp)binary_fuse8_serialization_bytes,
-              (gfp)binary_fuse8_serialize,
-              (gfp)binary_fuse8_deserialize,
-              (gfp)binary_fuse8_populate,
-              (gfp)binary_fuse8_contain);
+              binary_fuse8_allocate_gen,
+              binary_fuse8_free_gen,
+              binary_fuse8_size_in_bytes_gen,
+              binary_fuse8_serialization_bytes_gen,
+              binary_fuse8_serialize_gen,
+              binary_fuse8_deserialize_gen,
+              binary_fuse8_populate_gen,
+              binary_fuse8_contain_gen);
 }
 
 
@@ -159,14 +167,14 @@ bool testbinaryfuse16(size_t size, size_t repeated_size) {
   printf("testing binary fuse16 with size %zu and %zu duplicates\n", size, repeated_size);
   binary_fuse16_t filter;
   return test(size, repeated_size, &filter,
-              (gfp)binary_fuse16_allocate,
-              (gfp)binary_fuse16_free,
-              (gfp)binary_fuse16_size_in_bytes,
-              (gfp)binary_fuse16_serialization_bytes,
-              (gfp)binary_fuse16_serialize,
-              (gfp)binary_fuse16_deserialize,
-              (gfp)binary_fuse16_populate,
-              (gfp)binary_fuse16_contain);
+              binary_fuse16_allocate_gen,
+              binary_fuse16_free_gen,
+              binary_fuse16_size_in_bytes_gen,
+              binary_fuse16_serialization_bytes_gen,
+              binary_fuse16_serialize_gen,
+              binary_fuse16_deserialize_gen,
+              binary_fuse16_populate_gen,
+              binary_fuse16_contain_gen);
 }
 
 void failure_rate_binary_fuse16() {
