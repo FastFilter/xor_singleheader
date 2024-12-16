@@ -157,12 +157,12 @@ static inline bool xor16_allocate(uint32_t size, xor16_t *filter) {
 
 // report memory usage
 static inline size_t xor8_size_in_bytes(const xor8_t *filter) {
-  return 3 * filter->blockLength * sizeof(uint8_t) + sizeof(xor8_t);
+  return 3 * (size_t)(filter->blockLength) * sizeof(uint8_t) + sizeof(xor8_t);
 }
 
 // report memory usage
 static inline size_t xor16_size_in_bytes(const xor16_t *filter) {
-  return 3 * filter->blockLength * sizeof(uint16_t) + sizeof(xor16_t);
+  return 3 * (size_t)(filter->blockLength) * sizeof(uint16_t) + sizeof(xor16_t);
 }
 
 // release memory
@@ -449,9 +449,9 @@ static inline bool xor8_buffered_populate(uint64_t *keys, uint32_t size, xor8_t 
   if(size == 0) { return false; }
   uint64_t rng_counter = 1;
   filter->seed = xor_rng_splitmix64(&rng_counter);
-  size_t arrayLength = filter->blockLength * 3; // size of the backing array
+  size_t arrayLength = (size_t)(filter->blockLength) * 3; // size of the backing array
   xor_setbuffer_t buffer0, buffer1, buffer2;
-  size_t blockLength = filter->blockLength;
+  size_t blockLength = (size_t)(filter->blockLength);
   bool ok0 = xor_init_buffer(&buffer0, blockLength);
   bool ok1 = xor_init_buffer(&buffer1, blockLength);
   bool ok2 = xor_init_buffer(&buffer2, blockLength);
@@ -660,8 +660,8 @@ static inline bool xor8_populate(uint64_t *keys, uint32_t size, xor8_t *filter) 
   if(size == 0) { return false; }
   uint64_t rng_counter = 1;
   filter->seed = xor_rng_splitmix64(&rng_counter);
-  size_t arrayLength = filter->blockLength * 3; // size of the backing array
-  size_t blockLength = filter->blockLength;
+  size_t arrayLength = (size_t)(filter->blockLength) * 3; // size of the backing array
+  size_t blockLength = (size_t)(filter->blockLength);
 
   xor_xorset_t *sets =
       (xor_xorset_t *)malloc(arrayLength * sizeof(xor_xorset_t));
@@ -867,9 +867,9 @@ static inline bool xor16_buffered_populate(uint64_t *keys, uint32_t size, xor16_
   if(size == 0) { return false; }
   uint64_t rng_counter = 1;
   filter->seed = xor_rng_splitmix64(&rng_counter);
-  size_t arrayLength = filter->blockLength * 3; // size of the backing array
+  size_t arrayLength = (size_t)(filter->blockLength) * 3; // size of the backing array
   xor_setbuffer_t buffer0, buffer1, buffer2;
-  size_t blockLength = filter->blockLength;
+  size_t blockLength = (size_t)(filter->blockLength);
   bool ok0 = xor_init_buffer(&buffer0, blockLength);
   bool ok1 =  xor_init_buffer(&buffer1, blockLength);
   bool ok2 =  xor_init_buffer(&buffer2, blockLength);
@@ -1081,8 +1081,8 @@ static inline bool xor16_populate(uint64_t *keys, uint32_t size, xor16_t *filter
   if(size == 0) { return false; }
   uint64_t rng_counter = 1;
   filter->seed = xor_rng_splitmix64(&rng_counter);
-  size_t arrayLength = filter->blockLength * 3; // size of the backing array
-  size_t blockLength = filter->blockLength;
+  size_t arrayLength = (size_t)(filter->blockLength) * 3; // size of the backing array
+  size_t blockLength = (size_t)(filter->blockLength);
 
   xor_xorset_t *sets =
       (xor_xorset_t *)malloc(arrayLength * sizeof(xor_xorset_t));
@@ -1282,12 +1282,12 @@ static inline bool xor16_populate(uint64_t *keys, uint32_t size, xor16_t *filter
 
 static inline size_t xor16_serialization_bytes(xor16_t *filter) {
   return sizeof(filter->seed) + sizeof(filter->blockLength) +
-        sizeof(uint16_t) * 3 * filter->blockLength;
+      sizeof(uint16_t) * 3 * (size_t)(filter->blockLength);
 }
 
 static inline size_t xor8_serialization_bytes(const xor8_t *filter) {
   return sizeof(filter->seed) + sizeof(filter->blockLength) +
-        sizeof(uint8_t) * 3 * filter->blockLength;
+      sizeof(uint8_t) * 3 * (size_t)(filter->blockLength);
 }
 
 // serialize a filter to a buffer, the buffer should have a capacity of at least
@@ -1298,7 +1298,7 @@ static inline void xor16_serialize(const xor16_t *filter, char *buffer) {
   buffer += sizeof(filter->seed);
   memcpy(buffer, &filter->blockLength, sizeof(filter->blockLength));
   buffer += sizeof(filter->blockLength);
-  memcpy(buffer, filter->fingerprints, filter->blockLength * 3 * sizeof(uint16_t));
+  memcpy(buffer, filter->fingerprints, (size_t)(filter->blockLength) * 3 * sizeof(uint16_t));
 }
 
 // serialize a filter to a buffer, the buffer should have a capacity of at least
@@ -1309,7 +1309,7 @@ static inline void xor8_serialize(const xor8_t *filter, char *buffer) {
   buffer += sizeof(filter->seed);
   memcpy(buffer, &filter->blockLength, sizeof(filter->blockLength));
   buffer += sizeof(filter->blockLength);
-  memcpy(buffer, filter->fingerprints, filter->blockLength * 3 * sizeof(uint8_t));
+  memcpy(buffer, filter->fingerprints, (size_t)(filter->blockLength) * 3 * sizeof(uint8_t));
 }
 
 // deserialize a filter from a buffer, returns true on success, false on failure.
@@ -1322,11 +1322,11 @@ static inline bool xor16_deserialize(xor16_t * filter, const char *buffer) {
   buffer += sizeof(filter->seed);
   memcpy(&filter->blockLength, buffer, sizeof(filter->blockLength));
   buffer += sizeof(filter->blockLength);
-  filter->fingerprints = (uint16_t*)malloc(filter->blockLength * 3 * sizeof(uint16_t));
+  filter->fingerprints = (uint16_t*)malloc((size_t)(filter->blockLength) * 3 * sizeof(uint16_t));
   if(filter->fingerprints == NULL) {
     return false;
   }
-  memcpy(filter->fingerprints, buffer, filter->blockLength * 3 * sizeof(uint16_t));
+  memcpy(filter->fingerprints, buffer, (size_t)(filter->blockLength) * 3 * sizeof(uint16_t));
   return true;
 }
 
@@ -1341,11 +1341,11 @@ static inline bool xor8_deserialize(xor8_t * filter, const char *buffer) {
   buffer += sizeof(filter->seed);
   memcpy(&filter->blockLength, buffer, sizeof(filter->blockLength));
   buffer += sizeof(filter->blockLength);
-  filter->fingerprints = (uint8_t*)malloc(filter->blockLength * 3 * sizeof(uint8_t));
+  filter->fingerprints = (uint8_t*)malloc((size_t)(filter->blockLength) * 3 * sizeof(uint8_t));
   if(filter->fingerprints == NULL) {
     return false;
   }
-  memcpy(filter->fingerprints, buffer, filter->blockLength * 3 * sizeof(uint8_t));
+  memcpy(filter->fingerprints, buffer, (size_t)(filter->blockLength) * 3 * sizeof(uint8_t));
   return true;
 }
 
