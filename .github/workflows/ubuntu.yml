@@ -1,19 +1,33 @@
-name: Ubuntu 22.04 CI (GCC 11)
+name: Ubuntu 24.04 (gcc-13, clang-18)
 
 on: [push, pull_request]
 
 jobs:
   ubuntu-build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        compiler: [gcc, clang]
     steps:
-      - uses: actions/checkout@v3
-      - name: Use cmake
+      - name: checkout code
+        uses: actions/checkout@v4
+      - name: build with cmake
         run: |
+          if [ "${{ matrix.compiler }}" == "gcc" ]; then
+            export CC=gcc
+            export CXX=g++
+          elif [ "${{ matrix.compiler }}" == "clang" ]; then
+            export CC=clang
+            export CXX=clang++
+          fi
           mkdir build &&
           cd build &&
           cmake .. -DCMAKE_INSTALL_PREFIX:PATH=destination &&
           cmake --build .   &&
-          ctest --output-on-failure  &&
+          env \ # force failure if sanitizers report any warnings
+            ASAN_OPTIONS='halt_on_error=1:abort_on_error=1:print_summary=1' \
+            UBSAN_OPTIONS='halt_on_error=1:abort_on_error=1:print_summary=1:print_stacktrace=1'  \
+            ctest --output-on-failure  &&
           cmake --install . &&
           cd ../tests/installation_tests/find &&
           mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX:PATH=../../../build/destination .. &&  cmake --build .
