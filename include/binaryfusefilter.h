@@ -67,6 +67,7 @@ static inline uint64_t binary_fuse_rng_splitmix64(uint64_t *seed) {
 
 typedef struct binary_fuse8_s {
   uint64_t Seed;
+  uint32_t Size;
   uint32_t SegmentLength;
   uint32_t SegmentLengthMask;
   uint32_t SegmentCount;
@@ -222,6 +223,7 @@ static inline double binary_fuse_calculate_size_factor(uint32_t arity,
 static inline bool binary_fuse8_allocate(uint32_t size,
                                          binary_fuse8_t *filter) {
   uint32_t arity = 3;
+  filter->Size = size;
   filter->SegmentLength = size == 0 ? 4 : binary_fuse_calculate_segment_length(arity, size);
   if (filter->SegmentLength > 262144) {
     filter->SegmentLength = 262144;
@@ -258,6 +260,7 @@ static inline void binary_fuse8_free(binary_fuse8_t *filter) {
   free(filter->Fingerprints);
   filter->Fingerprints = NULL;
   filter->Seed = 0;
+  filter->Size = 0;
   filter->SegmentLength = 0;
   filter->SegmentLengthMask = 0;
   filter->SegmentCount = 0;
@@ -459,6 +462,7 @@ static inline bool binary_fuse8_populate(uint64_t *keys, uint32_t size,
 
 typedef struct binary_fuse16_s {
   uint64_t Seed;
+  uint32_t Size;
   uint32_t SegmentLength;
   uint32_t SegmentLengthMask;
   uint32_t SegmentCount;
@@ -512,6 +516,7 @@ static inline bool binary_fuse16_contain(uint64_t key,
 static inline bool binary_fuse16_allocate(uint32_t size,
                                          binary_fuse16_t *filter) {
   uint32_t arity = 3;
+  filter->Size = size;
   filter->SegmentLength = size == 0 ? 4 : binary_fuse_calculate_segment_length(arity, size);
   if (filter->SegmentLength > 262144) {
     filter->SegmentLength = 262144;
@@ -548,6 +553,7 @@ static inline void binary_fuse16_free(binary_fuse16_t *filter) {
   free(filter->Fingerprints);
   filter->Fingerprints = NULL;
   filter->Seed = 0;
+  filter->Size = 0;
   filter->SegmentLength = 0;
   filter->SegmentLengthMask = 0;
   filter->SegmentCount = 0;
