@@ -1349,5 +1349,109 @@ static inline bool xor8_deserialize(xor8_t * filter, const char *buffer) {
   return true;
 }
 
+// minimal bitfield implementation
+#define XOR_bitf_w (sizeof(uint8_t) * 8)
+#define XOR_bitf_sz(bits) (((bits) + XOR_bitf_w - 1) / XOR_bitf_w)
+#define XOR_bitf_word(bit) (bit / XOR_bitf_w)
+#define XOR_bitf_bit(bit) ((1U << (bit % XOR_bitf_w)) % 256)
+
+#define XOR_ser(buf, lim, src) do {			\
+	if ((buf) + sizeof src > (lim))		\
+	  return (0);				\
+	memcpy(buf, &src, sizeof src);		\
+	buf += sizeof src;			\
+} while (0)
+
+#define XOR_deser(dst, buf, lim) do {		\
+	if ((buf) + sizeof dst > (lim))		\
+	  return (false);			\
+	memcpy(&dst, buf, sizeof dst);		\
+	buf += sizeof dst;			\
+} while (0)
+
+// return required space for binary_xor{8,16}_pack()
+#define XOR_bytesf(xbits) \
+static inline size_t xor ## xbits ## _pack_bytes(const xor ## xbits ## _t *filter) \
+{ \
+  size_t sz = 0; \
+  size_t capacity = 3 * filter->blockLength; \
+  sz += sizeof filter->seed; \
+  sz += sizeof filter->blockLength; \
+  sz += XOR_bitf_sz(capacity); \
+  for (size_t i = 0; i < capacity; i++) { \
+    if (filter->fingerprints[i] == 0) \
+      continue; \
+    sz += sizeof filter->fingerprints[i]; \
+  } \
+  return (sz); \
+}
+
+// serialize as packed format, return size used or 0 for insufficient space
+#define XOR_packf(xbits) \
+static inline size_t xor ## xbits ## _pack(const xor ## xbits ## _t *filter, char *buffer, size_t space) { \
+  uint8_t *s = (uint8_t *)(void *)buffer; \
+  uint8_t *buf = s, *e = buf + space; \
+  size_t capacity = 3 * filter->blockLength; \
+ \
+  XOR_ser(buf, e, filter->seed); \
+  XOR_ser(buf, e, filter->blockLength); \
+  size_t bsz = XOR_bitf_sz(capacity); \
+  if (buf + bsz > e) \
+    return (0); \
+  uint8_t *bitf = buf; \
+  memset(bitf, 0, bsz); \
+  buf += bsz; \
+ \
+  for (size_t i = 0; i < capacity; i++) { \
+    if (filter->fingerprints[i] == 0) \
+      continue; \
+    bitf[XOR_bitf_word(i)] |= XOR_bitf_bit(i); \
+    XOR_ser(buf, e, filter->fingerprints[i]); \
+  } \
+  return ((size_t)(buf - s)); \
+}
+
+#define XOR_unpackf(xbits) \
+static inline bool xor ## xbits ## _unpack(xor ## xbits ## _t *filter, const char *buffer, size_t len) \
+{ \
+  const uint8_t *s = (const uint8_t *)(const void *)buffer; \
+  const uint8_t *buf = s, *e = buf + len; \
+ \
+  memset(filter, 0, sizeof *filter); \
+  XOR_deser(filter->seed, buf, e); \
+  XOR_deser(filter->blockLength, buf, e); \
+  size_t capacity = 3 * filter->blockLength; \
+  filter->fingerprints = (uint ## xbits ## _t *)calloc(capacity, sizeof filter->fingerprints[0]); \
+  if (filter->fingerprints == NULL) \
+    return (false); \
+  const uint8_t *bitf = buf; \
+  buf += XOR_bitf_sz(capacity); \
+  for (size_t i = 0; i < capacity; i++) { \
+    if ((bitf[XOR_bitf_word(i)] & XOR_bitf_bit(i)) == 0) \
+      continue; \
+    XOR_deser(filter->fingerprints[i], buf, e); \
+  } \
+  return (true); \
+}
+
+#define XOR_packers(xbits) \
+XOR_bytesf(xbits) \
+XOR_packf(xbits) \
+XOR_unpackf(xbits) \
+
+XOR_packers(8)
+XOR_packers(16)
+
+#undef XOR_packers
+#undef XOR_bytesf
+#undef XOR_packf
+#undef XOR_unpackf
+
+#undef XOR_bitf_w
+#undef XOR_bitf_sz
+#undef XOR_bitf_word
+#undef XOR_bitf_bit
+#undef XOR_ser
+#undef XOR_deser
 
 #endif
