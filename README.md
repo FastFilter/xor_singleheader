@@ -54,7 +54,19 @@ about 0.0015%. The type is `binary_fuse16_t` and you may use it with
 functions such as `binary_fuse16_allocate`, `binary_fuse16_populate`,
 `binary_fuse8_contain` and `binary_fuse8_free`.
 
-You may serialize the data as follows:
+For serialization, there is a choice between an unpacked and a packed format.
+
+The unpacked format is roughly of the same size as in-core data, but uses most
+efficient memory copy operations.
+
+The packed format avoids storing zero bytes and is considered near optimal (it
+can not be compressed further by zlib and its required space is very close to
+the theoretical lower limit), but it needs to copy individual words, so it
+should be expected to be somewhat slower.
+
+The two formats use slightly different APIs.
+
+You may serialize and deserialize in unpacked format as follows:
 
 ```C
   size_t buffer_size = binary_fuse16_serialization_bytes(&filter);
@@ -65,9 +77,31 @@ You may serialize the data as follows:
   free(buffer);
 ```
 
-The serialization does not handle endianess: it is expected that you will serialize
-and deserialize on the little endian systems. (Big endian systems are vanishingly rare.)
+To serialize and deserialize in packed format, use the `_pack_bytes()`,
+`_pack()` and `_unpack()` functions. The latter two have an additional `size_t`
+argument for the buffer length. `_pack()` can be used with a buffer of arbitrary
+size, it returns the used space if serialization fit into the buffer or 0
+otherwise.
 
+For example:
+
+```C
+  size_t buffer_size = binary_fuse16_pack_bytes(&filter);
+  char *buffer = (char*)malloc(buffer_size);
+  if (binary_fuse16_pack(&filter, buffer, buffer_size) != buffer_size) {
+    printf("pack failed\n");
+    free(buffer);
+    return;
+  }
+  binary_fuse16_free(&filter);
+  if (! binary_fuse16_unpack(&filter, buffer, buffer_size)) {
+    printf("unpack failed\n");
+  }
+  free(buffer);
+```
+
+Either serialization does not handle endianess changes: it is expected that you
+serialize and deserialize with equal byte order.
 
 ## C++ wrapper
 

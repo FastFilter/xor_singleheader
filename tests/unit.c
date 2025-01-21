@@ -268,7 +268,34 @@ void failure_rate_binary_fuse16() {
   free(big_set);
 }
 
+// test code from the example in the README
+void readme_pack() {
+  binary_fuse16_t filter = {0};
+  if (! binary_fuse16_allocate(64, &filter)) {
+    printf("allocation failed\n");
+    return;
+  }
+
+  // begin example snippet
+  size_t buffer_size = binary_fuse16_pack_bytes(&filter);
+  char *buffer = (char*)malloc(buffer_size);
+  if (binary_fuse16_pack(&filter, buffer, buffer_size) != buffer_size) {
+    printf("pack failed\n");
+    free(buffer);
+    return;
+  }
+  binary_fuse16_free(&filter);
+  if (! binary_fuse16_unpack(&filter, buffer, buffer_size)) {
+    printf("unpack failed\n");
+  }
+  free(buffer);
+  // end example snippet
+
+  binary_fuse16_free(&filter);
+}
+
 int main() {
+  readme_pack();
   failure_rate_binary_fuse16();
   for(size_t size = 1000; size <= 1000000; size *= 300) {
     printf("== size = %zu \n", size);
