@@ -14,9 +14,9 @@ else() # *nix
   -Wall -Wextra -Wshadow  -Wcast-qual -Wconversion -Wsign-conversion -Werror)
 
   if (NOT MINGW) # sanitizers are not supported under mingw
-    list(APPEND TEST_COMPILE_OPTIONS -fsanitize=address,undefined,leak) 
+    list(APPEND TEST_COMPILE_OPTIONS -fsanitize=address,undefined) 
     # sanitsizers need to be specified at link time as well
-    target_link_options(unit PRIVATE -fsanitize=address,leak,undefined)
+    target_link_options(unit PRIVATE -fsanitize=address,undefined)
   endif()
 endif()
 

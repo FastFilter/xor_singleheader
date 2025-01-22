@@ -59,10 +59,9 @@ For serialization, there is a choice between an unpacked and a packed format.
 The unpacked format is roughly of the same size as in-core data, but uses most
 efficient memory copy operations.
 
-The packed format avoids storing zero bytes and is considered near optimal (it
-can not be compressed further by zlib and its required space is very close to
-the theoretical lower limit), but it needs to copy individual words, so it
-should be expected to be somewhat slower.
+The packed format avoids storing zero bytes and relies on a bitset to locate them, so it
+should be expected to be somewhat slower. The packed format might be smaller or larger.
+When in doubt, prefer the regular (unpacked) format.
 
 The two formats use slightly different APIs.
 
@@ -77,11 +76,13 @@ You may serialize and deserialize in unpacked format as follows:
   free(buffer);
 ```
 
+This should be the default.
+
 To serialize and deserialize in packed format, use the `_pack_bytes()`,
 `_pack()` and `_unpack()` functions. The latter two have an additional `size_t`
 argument for the buffer length. `_pack()` can be used with a buffer of arbitrary
 size, it returns the used space if serialization fit into the buffer or 0
-otherwise.
+otherwise. Note that the packed format will be slower and may not save space.
 
 For example:
 
