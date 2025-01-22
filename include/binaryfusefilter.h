@@ -67,6 +67,7 @@ static inline uint64_t binary_fuse_rng_splitmix64(uint64_t *seed) {
 
 typedef struct binary_fuse8_s {
   uint64_t Seed;
+  uint32_t Size;
   uint32_t SegmentLength;
   uint32_t SegmentLengthMask;
   uint32_t SegmentCount;
@@ -222,6 +223,7 @@ static inline double binary_fuse_calculate_size_factor(uint32_t arity,
 static inline bool binary_fuse8_allocate(uint32_t size,
                                          binary_fuse8_t *filter) {
   uint32_t arity = 3;
+  filter->Size = size;
   filter->SegmentLength = size == 0 ? 4 : binary_fuse_calculate_segment_length(arity, size);
   if (filter->SegmentLength > 262144) {
     filter->SegmentLength = 262144;
@@ -258,6 +260,7 @@ static inline void binary_fuse8_free(binary_fuse8_t *filter) {
   free(filter->Fingerprints);
   filter->Fingerprints = NULL;
   filter->Seed = 0;
+  filter->Size = 0;
   filter->SegmentLength = 0;
   filter->SegmentLengthMask = 0;
   filter->SegmentCount = 0;
@@ -459,6 +462,7 @@ static inline bool binary_fuse8_populate(uint64_t *keys, uint32_t size,
 
 typedef struct binary_fuse16_s {
   uint64_t Seed;
+  uint32_t Size;
   uint32_t SegmentLength;
   uint32_t SegmentLengthMask;
   uint32_t SegmentCount;
@@ -512,6 +516,7 @@ static inline bool binary_fuse16_contain(uint64_t key,
 static inline bool binary_fuse16_allocate(uint32_t size,
                                          binary_fuse16_t *filter) {
   uint32_t arity = 3;
+  filter->Size = size;
   filter->SegmentLength = size == 0 ? 4 : binary_fuse_calculate_segment_length(arity, size);
   if (filter->SegmentLength > 262144) {
     filter->SegmentLength = 262144;
@@ -548,6 +553,7 @@ static inline void binary_fuse16_free(binary_fuse16_t *filter) {
   free(filter->Fingerprints);
   filter->Fingerprints = NULL;
   filter->Seed = 0;
+  filter->Size = 0;
   filter->SegmentLength = 0;
   filter->SegmentLengthMask = 0;
   filter->SegmentCount = 0;
@@ -857,5 +863,112 @@ static inline bool binary_fuse8_deserialize(binary_fuse8_t * filter, const char 
   memcpy(filter->Fingerprints, fingerprints, filter->ArrayLength * sizeof(uint8_t));
   return true;
 }
+
+// minimal bitfield implementation
+#define XOR_bitf_w (sizeof(uint8_t) * 8)
+#define XOR_bitf_sz(bits) (((bits) + XOR_bitf_w - 1) / XOR_bitf_w)
+#define XOR_bitf_word(bit) (bit / XOR_bitf_w)
+#define XOR_bitf_bit(bit) ((1U << (bit % XOR_bitf_w)) % 256)
+
+#define XOR_ser(buf, lim, src) do {			\
+	if ((buf) + sizeof src > (lim))		\
+	  return (0);				\
+	memcpy(buf, &src, sizeof src);		\
+	buf += sizeof src;			\
+} while (0)
+
+#define XOR_deser(dst, buf, lim) do {		\
+	if ((buf) + sizeof dst > (lim))		\
+	  return (false);			\
+	memcpy(&dst, buf, sizeof dst);		\
+	buf += sizeof dst;			\
+} while (0)
+
+// return required space for binary_fuse{8,16}_pack()
+#define XOR_bytesf(fuse) \
+static inline size_t binary_ ## fuse ## _pack_bytes(const binary_ ## fuse ## _t *filter) \
+{ \
+  size_t sz = 0; \
+  sz += sizeof filter->Seed; \
+  sz += sizeof filter->Size; \
+  sz += XOR_bitf_sz(filter->ArrayLength); \
+  for (size_t i = 0; i < filter->ArrayLength; i++) { \
+    if (filter->Fingerprints[i] == 0) \
+      continue; \
+    sz += sizeof filter->Fingerprints[i]; \
+  } \
+  return (sz); \
+}
+
+// serialize as packed format, return size used or 0 for insufficient space
+#define XOR_packf(fuse) \
+static inline size_t binary_ ## fuse ## _pack(const binary_ ## fuse ## _t *filter, char *buffer, size_t space) { \
+  uint8_t *s = (uint8_t *)(void *)buffer; \
+  uint8_t *buf = s, *e = buf + space; \
+ \
+  XOR_ser(buf, e, filter->Seed); \
+  XOR_ser(buf, e, filter->Size); \
+  size_t bsz = XOR_bitf_sz(filter->ArrayLength); \
+  if (buf + bsz > e) \
+    return (0); \
+  uint8_t *bitf = buf; \
+  memset(bitf, 0, bsz); \
+  buf += bsz; \
+ \
+  for (size_t i = 0; i < filter->ArrayLength; i++) { \
+    if (filter->Fingerprints[i] == 0) \
+      continue; \
+    bitf[XOR_bitf_word(i)] |= XOR_bitf_bit(i); \
+    XOR_ser(buf, e, filter->Fingerprints[i]); \
+  } \
+  return ((size_t)(buf - s)); \
+}
+
+#define XOR_unpackf(fuse) \
+static inline bool binary_ ## fuse ## _unpack(binary_ ## fuse ## _t *filter, const char *buffer, size_t len) \
+{ \
+  const uint8_t *s = (const uint8_t *)(const void *)buffer; \
+  const uint8_t *buf = s, *e = buf + len; \
+  bool r; \
+ \
+  uint64_t Seed; \
+  uint32_t Size; \
+ \
+  memset(filter, 0, sizeof *filter); \
+  XOR_deser(Seed, buf, e); \
+  XOR_deser(Size, buf, e); \
+  r = binary_ ## fuse ## _allocate(Size, filter); \
+  if (! r) \
+    return (r); \
+  filter->Seed = Seed; \
+  const uint8_t *bitf = buf; \
+  buf += XOR_bitf_sz(filter->ArrayLength); \
+  for (size_t i = 0; i < filter->ArrayLength; i++) { \
+    if ((bitf[XOR_bitf_word(i)] & XOR_bitf_bit(i)) == 0) \
+      continue; \
+    XOR_deser(filter->Fingerprints[i], buf, e); \
+  } \
+  return (true); \
+}
+
+#define XOR_packers(fuse) \
+XOR_bytesf(fuse) \
+XOR_packf(fuse) \
+XOR_unpackf(fuse) \
+
+XOR_packers(fuse8)
+XOR_packers(fuse16)
+
+#undef XOR_packers
+#undef XOR_bytesf
+#undef XOR_packf
+#undef XOR_unpackf
+
+#undef XOR_bitf_w
+#undef XOR_bitf_sz
+#undef XOR_bitf_word
+#undef XOR_bitf_bit
+#undef XOR_ser
+#undef XOR_deser
 
 #endif
