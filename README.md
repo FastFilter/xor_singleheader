@@ -61,6 +61,7 @@ efficient memory copy operations.
 
 The packed format avoids storing zero bytes and relies on a bitset to locate them, so it
 should be expected to be somewhat slower. The packed format might be smaller or larger.
+It might be beneficial when using 16-bit binary fuse filters.
 When in doubt, prefer the regular (unpacked) format.
 
 The two formats use slightly different APIs.
@@ -82,7 +83,8 @@ To serialize and deserialize in packed format, use the `_pack_bytes()`,
 `_pack()` and `_unpack()` functions. The latter two have an additional `size_t`
 argument for the buffer length. `_pack()` can be used with a buffer of arbitrary
 size, it returns the used space if serialization fit into the buffer or 0
-otherwise. Note that the packed format will be slower and may not save space.
+otherwise. Note that the packed format will be slower and may not save space
+although it is likely beneficial when using the 16-bit binary fuse filters.
 
 For example:
 
