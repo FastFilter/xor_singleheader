@@ -1374,7 +1374,7 @@ static inline bool xor8_deserialize(xor8_t * filter, const char *buffer) {
 static inline size_t xor ## xbits ## _pack_bytes(const xor ## xbits ## _t *filter) \
 { \
   size_t sz = 0; \
-  size_t capacity = 3 * filter->blockLength; \
+  size_t capacity = (size_t)(3 * filter->blockLength); \
   sz += sizeof filter->seed; \
   sz += sizeof filter->blockLength; \
   sz += XOR_bitf_sz(capacity); \
@@ -1391,7 +1391,7 @@ static inline size_t xor ## xbits ## _pack_bytes(const xor ## xbits ## _t *filte
 static inline size_t xor ## xbits ## _pack(const xor ## xbits ## _t *filter, char *buffer, size_t space) { \
   uint8_t *s = (uint8_t *)(void *)buffer; \
   uint8_t *buf = s, *e = buf + space; \
-  size_t capacity = 3 * filter->blockLength; \
+  size_t capacity = (size_t)(3 * filter->blockLength); \
  \
   XOR_ser(buf, e, filter->seed); \
   XOR_ser(buf, e, filter->blockLength); \
@@ -1420,7 +1420,7 @@ static inline bool xor ## xbits ## _unpack(xor ## xbits ## _t *filter, const cha
   memset(filter, 0, sizeof *filter); \
   XOR_deser(filter->seed, buf, e); \
   XOR_deser(filter->blockLength, buf, e); \
-  size_t capacity = 3 * filter->blockLength; \
+  size_t capacity = (size_t)(3 * filter->blockLength); \
   filter->fingerprints = (uint ## xbits ## _t *)calloc(capacity, sizeof filter->fingerprints[0]); \
   if (filter->fingerprints == NULL) \
     return (false); \
