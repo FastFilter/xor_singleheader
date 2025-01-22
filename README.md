@@ -152,22 +152,6 @@ private:
 
 The construction of a binary fuse filter is fast but it needs a fair amount of temporary memory: plan for about 24 bytes of memory per set entry. It is possible to construct a binary fuse filter with almost no temporary memory, but the construction is then somewhat slower.
 
-## Persistent usage
-
-The data structure of a `binary_fuse8_t` instance quite simple. Thus you can easily save it to disk or memory-map it. E.g., we have
-
-```C
-typedef struct binary_fuse8_s {
-  uint64_t Seed;
-  uint32_t SegmentLength;
-  uint32_t SegmentLengthMask;
-  uint32_t SegmentCount;
-  uint32_t SegmentCountLength;
-  uint32_t ArrayLength;
-  uint8_t *Fingerprints; // points to ArrayLength bytes
-} binary_fuse8_t;
-```
-
 ## Running tests and benchmarks
 
 To run tests: `make test`.
