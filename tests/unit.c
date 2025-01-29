@@ -191,6 +191,35 @@ bool testbufferedxor16(size_t size) {
 bool testbinaryfuse8(size_t size, size_t repeated_size) {
   printf("testing binary fuse8 with size %zu and %zu duplicates\n", size, repeated_size);
   binary_fuse8_t filter;
+
+  // size serialization test
+  binary_fuse8_allocate((uint32_t)size, &filter);
+  uint64_t *big_set = (uint64_t *)malloc(sizeof(uint64_t) * size);
+  for (size_t i = 0; i < size; i++) {
+    big_set[i] = i;
+  }
+  if (!binary_fuse8_populate(big_set, (uint32_t)size, &filter)) {
+    return false;
+  }
+  free(big_set);
+
+  size_t buffer_size = binary_fuse8_serialization_bytes(&filter);
+  char *buffer = (char *)malloc(buffer_size);
+  binary_fuse8_serialize(&filter, buffer);
+  binary_fuse8_free(&filter);
+  binary_fuse8_deserialize(&filter, buffer);
+
+  if (filter.Size != size) {
+    printf("size not (de-)serialized correctly, found %d, expected %zu.",
+           filter.Size, size);
+    free(buffer);
+    binary_fuse8_free(&filter);
+    return false;
+  }
+  free(buffer);
+  binary_fuse8_free(&filter);
+  // end of size serialization test
+
   return test(size, repeated_size, &filter,
               binary_fuse8_allocate_gen,
               binary_fuse8_free_gen,
@@ -205,6 +234,36 @@ bool testbinaryfuse8(size_t size, size_t repeated_size) {
 bool testbinaryfuse16(size_t size, size_t repeated_size) {
   printf("testing binary fuse16 with size %zu and %zu duplicates\n", size, repeated_size);
   binary_fuse16_t filter;
+
+  // size serialization test
+  binary_fuse16_allocate((uint32_t)size, &filter);
+  uint64_t *big_set = (uint64_t *)malloc(sizeof(uint64_t) * size);
+  for (size_t i = 0; i < size; i++) {
+    big_set[i] = i;
+  }
+  if (!binary_fuse16_populate(big_set, (uint32_t)size, &filter)) {
+    return false;
+  }
+  free(big_set);
+
+  size_t buffer_size = binary_fuse16_serialization_bytes(&filter);
+  char *buffer = (char *)malloc(buffer_size);
+  binary_fuse16_serialize(&filter, buffer);
+  binary_fuse16_free(&filter);
+  binary_fuse16_deserialize(&filter, buffer);
+
+  if (filter.Size != size) {
+    printf("size not (de-)serialized correctly, found %d, expected %zu.",
+           filter.Size, size);
+    free(buffer);
+    binary_fuse16_free(&filter);
+    return false;
+  }
+
+  free(buffer);
+  binary_fuse16_free(&filter);
+  // end of size serialization test
+
   return test(size, repeated_size, &filter,
               binary_fuse16_allocate_gen,
               binary_fuse16_free_gen,
