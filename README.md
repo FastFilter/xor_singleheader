@@ -184,6 +184,19 @@ It took 0.358220 seconds to build an index over 10000000 values.
 ...
 ```
 
+## Policy regarding static analysis
+
+We always encourage bug reports and bug fixes.
+If a static analyzer reports a warning, it may
+be a bug, but you have to carry the analysis to
+show that it is a bug.
+
+It is not a goal of this project to be warning-free when reviewed with all possible
+static analyzers.
+
+We will be happy to take in safe non-invasive pull requests to silence some warnings. However,
+please do not file in an issue in such cases.
+
 ## Implementations of xor and binary fuse filters in other programmming languages
 
 * [Go](https://github.com/FastFilter/xorfilter)
