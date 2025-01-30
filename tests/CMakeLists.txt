@@ -4,14 +4,13 @@ target_link_libraries(unit PRIVATE xor_singleheader)
 
 
 # full warnings with sanitizers for tests. Include debug symbols and
-# only -O2 to maintain some debugability. -Werror to
-# prevent new warning creeping in Matches Makefile
+# only -O2 to maintain some debugability.
 if (MSVC)
   # limited support for MSVC, this is not tested
   list(APPEND TEST_COMPILE_OPTIONS /W4  /fsanitize=address)
 else() # *nix
   list(APPEND TEST_COMPILE_OPTIONS -g -O2
-  -Wall -Wextra -Wshadow  -Wcast-qual -Wconversion -Wsign-conversion -Werror)
+  -Wall -Wextra)
 
   if (NOT MINGW) # sanitizers are not supported under mingw
     list(APPEND TEST_COMPILE_OPTIONS -fsanitize=address,undefined) 

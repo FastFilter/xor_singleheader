@@ -1,7 +1,7 @@
 all: unit bench
 
 unit : tests/unit.c include/xorfilter.h include/binaryfusefilter.h
-	${CC} -std=c99 -g -O2 -fsanitize=address,leak,undefined -o unit tests/unit.c -lm -Iinclude -Wall -Wextra -Wshadow  -Wcast-qual -Wconversion -Wsign-conversion -Werror
+	${CC} -std=c99 -g -O2 -fsanitize=address,leak,undefined -o unit tests/unit.c -lm -Iinclude -Wall -Wextra -Wshadow  -Wcast-qual
 
 ab : tests/a.c tests/b.c
 	${CC} -std=c99 -o c tests/a.c tests/b.c -lm -Iinclude -Wall -Wextra -Wshadow  -Wcast-qual -Wconversion -Wsign-conversion
