@@ -205,7 +205,7 @@ please do not file in an issue in such cases.
 * [Zig](https://github.com/hexops/fastfilter)
 * [C++](https://github.com/FastFilter/fastfilter_cpp)
 * [Java](https://github.com/FastFilter/fastfilter_java)
-* [Python](https://github.com/GreyDireWolf/pyxorfilter)
+* [Python](https://github.com/FastFilter/pyfusefilter)
 * [C99](https://github.com/skeeto/xf8)
 * [Julia](https://github.com/JokingHero/FastFilter.jl)
 * [C#](https://github.com/jonmat/FastIndex)
