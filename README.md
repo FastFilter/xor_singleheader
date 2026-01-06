@@ -184,6 +184,24 @@ It took 0.358220 seconds to build an index over 10000000 values.
 ...
 ```
 
+Query benchmark
+```
+To run the new query benchmark (builds filters of 1,000,000 even keys and issues 1,000,000 queries to measure throughput):
+
+$ make query
+$ ./query
+```
+
+Sample output (shows queries/sec and nanoseconds per query):
+
+```
+Running binary_fuse8 query benchmark
+binary_fuse8: 1000000 queries in 0.123456 s => 8103726.000000 q/s, 123.456000 ns/q, found=500000
+Running xor8 query benchmark
+xor8: 1000000 queries in 0.098765 s => 10123456.000000 q/s, 98.765000 ns/q, found=500000
+...
+```
+
 ## Policy regarding static analysis
 
 We always encourage bug reports and bug fixes.
