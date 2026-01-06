@@ -227,3 +227,4 @@ please do not file in an issue in such cases.
 * [C99](https://github.com/skeeto/xf8)
 * [Julia](https://github.com/JokingHero/FastFilter.jl)
 * [C#](https://github.com/jonmat/FastIndex)
+* [Java](https://github.com/FastFilter/jfusebin)
