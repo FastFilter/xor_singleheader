@@ -315,7 +315,6 @@ static inline bool binary_fuse8_populate(uint64_t *keys, uint32_t size,
     if (loop + 1 > XOR_MAX_ITERATIONS) {
       // The probability of this happening is lower than the
       // the cosmic-ray probability (i.e., a cosmic ray corrupts your system)
-      memset(filter->Fingerprints, 0xFF, filter->ArrayLength);
       free(alone);
       free(t2count);
       free(reverseH);
