@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Xor &amp; Binary Fuse Filters — fast, compact, header-only C library</title>
+<meta name="description" content="A header-only C library implementing xor filters and binary fuse filters: faster and smaller than Bloom and cuckoo filters, naturally compressible, and used in production.">
+<meta name="author" content="Thomas Mueller Graf, Daniel Lemire">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Xor &amp; Binary Fuse Filters">
+<meta property="og:description" content="A header-only C library: faster and smaller than Bloom and cuckoo filters.">
+<meta property="og:image" content="figures/comparison.png">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="nav" id="top">
+  <div class="nav-inner">
+    <a class="brand" href="#top">
+      <span class="brand-mark">⊕</span>
+      <span class="brand-text">xor &amp; binary fuse filters</span>
+    </a>
+    <nav class="nav-links">
+      <a href="#why">Why</a>
+      <a href="#start">Quick start</a>
+      <a href="#compare">Compactness</a>
+      <a href="#serialize">Serialization</a>
+      <a href="#cite">Papers</a>
+      <a class="nav-gh" href="https://github.com/FastFilter/xor_singleheader" target="_blank" rel="noopener">GitHub ↗</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-inner">
+    <div class="hero-badge">Header-only · C99 · Apache 2.0</div>
+    <h1 class="hero-title">
+      Probabilistic set membership,<br>
+      <span class="grad">smaller &amp; faster than Bloom.</span>
+    </h1>
+    <p class="hero-sub">
+      A single-header C library implementing <strong>xor filters</strong> and state-of-the-art
+      <strong>binary fuse filters</strong> — a faster, more compact alternative to Bloom and cuckoo
+      filters that compresses naturally and serializes cleanly.
+    </p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="#start">Get started</a>
+      <a class="btn btn-ghost" href="https://github.com/FastFilter/xor_singleheader" target="_blank" rel="noopener">View on GitHub</a>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-num">~9</div>
+        <div class="stat-label">bits per entry<br>(8-bit filter)</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">0.4%</div>
+        <div class="stat-label">false-positive<br>probability</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">1</div>
+        <div class="stat-label">header file<br>to drop in</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">∼1.08×</div>
+        <div class="stat-label">of the information<br>lower bound</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<main>
+
+<section id="why" class="section">
+  <div class="section-head">
+    <h2>Why xor &amp; binary fuse filters</h2>
+    <p>Bloom filters check whether an element belongs to a set. These do the same job — only smaller and faster.</p>
+  </div>
+  <div class="cards">
+    <article class="card">
+      <div class="card-ico">📦</div>
+      <h3>Smaller than Bloom</h3>
+      <p>Binary fuse filters approach the information-theoretic lower bound — well under 9 bits per entry, beating Bloom and cuckoo filters at the same false-positive rate.</p>
+    </article>
+    <article class="card">
+      <div class="card-ico">⚡</div>
+      <h3>Fast lookups</h3>
+      <p>Membership queries touch only a few cache lines. Construction is fast too — millions of keys indexed per second.</p>
+    </article>
+    <article class="card">
+      <div class="card-ico">🗜️</div>
+      <h3>Naturally compressible</h3>
+      <p>Unlike Bloom filters, xor and binary fuse filters compress well with standard tools (gzip, zstd, …) for even smaller on-disk footprints.</p>
+    </article>
+    <article class="card">
+      <div class="card-ico">🧩</div>
+      <h3>Truly header-only</h3>
+      <p>Copy one <code>.h</code> file into your project. No build system, no dependencies — pure C99 under the business-friendly Apache 2.0 license.</p>
+    </article>
+    <article class="card">
+      <div class="card-ico">💾</div>
+      <h3>Serializable</h3>
+      <p>Persist filters with fast memory-copy serialization, or use the packed format to squeeze out zero bytes when every byte counts.</p>
+    </article>
+    <article class="card">
+      <div class="card-ico">🏭</div>
+      <h3>Production-proven</h3>
+      <p>Shipping in real systems including <a href="https://github.com/datafuselabs/Databend" target="_blank" rel="noopener">Databend</a>, <a href="https://github.com/ntop/nDPI" target="_blank" rel="noopener">ntop</a>, <a href="https://github.com/infiniflow/infinity" target="_blank" rel="noopener">InfiniFlow</a> and <a href="https://github.com/cockroachdb/pebble" target="_blank" rel="noopener">Pebble</a>.</p>
+    </article>
+  </div>
+</section>
+
+<section id="start" class="section section-alt">
+  <div class="section-head">
+    <h2>Quick start</h2>
+    <p>Your set is a collection of 64-bit integers. Hash strings or other data to 64 bits first — collisions just need to be unlikely.</p>
+  </div>
+
+  <div class="code-grid">
+    <div class="code-block">
+      <div class="code-title"><span class="dot"></span>binary_fuse8 — build &amp; query</div>
+<pre><code class="language-c">#include "binaryfusefilter.h"
+
+uint64_t *big_set = /* your 64-bit keys */;
+
+binary_fuse8_t filter;
+bool is_ok = binary_fuse8_allocate(size, &filter);
+if (!is_ok) {
+    // out of memory
+}
+
+is_ok = binary_fuse8_populate(big_set, size, &filter);
+if (!is_ok) {
+    // out of memory
+}
+
+binary_fuse8_contain(big_set[0], &filter);   // true
+binary_fuse8_contain(rand_value, &filter);   // almost always false
+
+binary_fuse8_free(&filter);</code></pre>
+    </div>
+
+    <div class="side">
+      <div class="side-card">
+        <h3>8-bit vs 16-bit</h3>
+        <p>The default <code>binary_fuse8_t</code> uses an 8-bit fingerprint: ≈9 bits/entry and a 1/256 (0.4%) false-positive rate.</p>
+        <p>Need fewer false positives? <code>binary_fuse16_t</code> uses about twice the memory for a false-positive rate <strong>256× smaller</strong> — about 0.0015%.</p>
+      </div>
+      <div class="side-card">
+        <h3>Memory while building</h3>
+        <p>Construction is fast but uses temporary memory — plan for roughly <strong>24 bytes per entry</strong>. A low-memory construction path exists at some speed cost.</p>
+      </div>
+    </div>
+  </div>
+
+  <p class="note">
+    Prefer the state-of-the-art <strong>binary fuse</strong> filters. The original <strong>xor</strong> filters
+    (<code>xorfilter.h</code>, types <code>xor8_t</code> / <code>xor16_t</code>) are also included for compatibility.
+  </p>
+</section>
+
+<section id="compare" class="section">
+  <div class="section-head">
+    <h2>How compact, really?</h2>
+    <p>Theoretical bits per entry as a function of the false-positive rate. Lower is better — binary fuse filters sit closest to the floor.</p>
+  </div>
+  <div class="figure">
+    <img src="figures/comparison.png" alt="Bits per entry versus false-positive rate for Bloom, cuckoo, xor and binary fuse filters. Binary fuse filters use the fewest bits.">
+    <p class="figure-cap">Lower is better. Binary fuse filters approach the information-theoretic floor — using fewer bits than xor, cuckoo and Bloom filters at every false-positive rate.</p>
+  </div>
+</section>
+
+<section id="serialize" class="section section-alt">
+  <div class="section-head">
+    <h2>Serialization</h2>
+    <p>Two formats. Use the unpacked format by default; reach for packed only when you must preserve every byte.</p>
+  </div>
+
+  <div class="code-grid">
+    <div class="code-block">
+      <div class="code-title"><span class="dot"></span>Unpacked — the default</div>
+<pre><code class="language-c">size_t bytes = binary_fuse16_serialization_bytes(&filter);
+char *buffer = (char*) malloc(bytes);
+
+binary_fuse16_serialize(&filter, buffer);
+binary_fuse16_free(&filter);
+
+binary_fuse16_deserialize(&filter, buffer);
+free(buffer);</code></pre>
+    </div>
+    <div class="code-block">
+      <div class="code-title"><span class="dot"></span>Packed — squeeze out zero bytes</div>
+<pre><code class="language-c">size_t bytes = binary_fuse16_pack_bytes(&filter);
+char *buffer = (char*) malloc(bytes);
+
+if (binary_fuse16_pack(&filter, buffer, bytes) != bytes) {
+    // pack failed
+}
+binary_fuse16_free(&filter);
+
+if (!binary_fuse16_unpack(&filter, buffer, bytes)) {
+    // unpack failed
+}
+free(buffer);</code></pre>
+    </div>
+  </div>
+  <p class="note">
+    Serialization does not convert byte order — serialize and deserialize on machines with the same endianness.
+  </p>
+</section>
+
+<section id="ecosystem" class="section">
+  <div class="section-head">
+    <h2>Beyond C</h2>
+    <p>The same filters, implemented across the ecosystem. Need C++? We recommend <a href="https://github.com/oschonrock/binfuse" target="_blank" rel="noopener">binfuse</a> — or roll your own thin wrapper.</p>
+  </div>
+  <div class="langs">
+    <a href="https://github.com/FastFilter/xorfilter" target="_blank" rel="noopener">Go</a>
+    <a href="https://github.com/mpope9/exor_filter" target="_blank" rel="noopener">Erlang</a>
+    <a href="https://github.com/bnclabs/xorfilter" target="_blank" rel="noopener">Rust</a>
+    <a href="https://github.com/hexops/fastfilter" target="_blank" rel="noopener">Zig</a>
+    <a href="https://github.com/FastFilter/fastfilter_cpp" target="_blank" rel="noopener">C++</a>
+    <a href="https://github.com/FastFilter/fastfilter_java" target="_blank" rel="noopener">Java</a>
+    <a href="https://github.com/FastFilter/pyfusefilter" target="_blank" rel="noopener">Python</a>
+    <a href="https://github.com/skeeto/xf8" target="_blank" rel="noopener">C99</a>
+    <a href="https://github.com/JokingHero/FastFilter.jl" target="_blank" rel="noopener">Julia</a>
+    <a href="https://github.com/jonmat/FastIndex" target="_blank" rel="noopener">C#</a>
+  </div>
+</section>
+
+<section id="cite" class="section section-alt">
+  <div class="section-head">
+    <h2>Papers</h2>
+    <p>The research behind the library.</p>
+  </div>
+  <div class="papers">
+    <a class="paper" href="http://arxiv.org/abs/2201.01174" target="_blank" rel="noopener">
+      <div class="paper-tag">Binary Fuse Filters</div>
+      <h3>Binary Fuse Filters: Fast and Smaller Than Xor Filters</h3>
+      <p>Thomas Mueller Graf, Daniel Lemire · Journal of Experimental Algorithmics · DOI 10.1145/3510449</p>
+    </a>
+    <a class="paper" href="https://arxiv.org/abs/1912.08258" target="_blank" rel="noopener">
+      <div class="paper-tag">Xor Filters</div>
+      <h3>Xor Filters: Faster and Smaller Than Bloom and Cuckoo Filters</h3>
+      <p>Thomas Mueller Graf, Daniel Lemire · Journal of Experimental Algorithmics 25(1), 2020 · DOI 10.1145/3376122</p>
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div>
+      <div class="brand"><span class="brand-mark">⊕</span><span class="brand-text">xor &amp; binary fuse filters</span></div>
+      <p class="footer-note">Header-only C library · Apache License 2.0</p>
+    </div>
+    <div class="footer-links">
+      <a href="https://github.com/FastFilter/xor_singleheader" target="_blank" rel="noopener">Repository</a>
+      <a href="https://github.com/FastFilter/xor_singleheader/issues" target="_blank" rel="noopener">Issues</a>
+      <a href="https://github.com/FastFilter/FilterPassword" target="_blank" rel="noopener">Example app</a>
+      <a href="#top">Back to top ↑</a>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/c.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
