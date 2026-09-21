@@ -327,6 +327,50 @@ void failure_rate_binary_fuse16() {
   free(big_set);
 }
 
+static uint64_t unit_splitmix64(uint64_t *seed) {
+  uint64_t z = (*seed += 0x9E3779B97F4A7C15ULL);
+  z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ULL;
+  z = (z ^ (z >> 27)) * 0x94D049BB133111EBULL;
+  return z ^ (z >> 31);
+}
+
+void small_segment_count_binary_fuse() {
+  printf("testing binary fuse at sizes with few segments (issue #77)\n");
+  const uint32_t sizes[] = {3551, 11504, 11521, 12372, 13224, 37454};
+  const size_t trials = 50;
+  uint64_t seed = 42;
+  for (size_t si = 0; si < sizeof(sizes) / sizeof(sizes[0]); si++) {
+    uint32_t size = sizes[si];
+    uint64_t *big_set = (uint64_t *)malloc(sizeof(uint64_t) * size);
+    binary_fuse8_t filter8;
+    binary_fuse16_t filter16;
+    binary_fuse8_allocate(size, &filter8);
+    binary_fuse16_allocate(size, &filter16);
+    size_t failure = 0;
+    for (size_t trial = 0; trial < trials; trial++) {
+      for (size_t i = 0; i < size; i++) {
+        big_set[i] = unit_splitmix64(&seed);
+      }
+      if (!binary_fuse8_populate(big_set, size, &filter8)) {
+        failure++;
+      }
+      if (!binary_fuse16_populate(big_set, size, &filter16)) {
+        failure++;
+      }
+    }
+    printf("size %u: segment length %u, %u segments, %zu failures out of %zu\n",
+           size, filter8.SegmentLength, filter8.SegmentCount, failure, 2 * trials);
+    binary_fuse8_free(&filter8);
+    binary_fuse16_free(&filter16);
+    free(big_set);
+    if (failure > 0) {
+      printf("construction failed at size %u\n", size);
+      abort();
+    }
+  }
+  printf("\n");
+}
+
 // test code from the example in the README
 void readme_pack() {
   binary_fuse16_t filter = {0};
@@ -356,6 +400,7 @@ void readme_pack() {
 int main() {
   readme_pack();
   failure_rate_binary_fuse16();
+  small_segment_count_binary_fuse();
   for(size_t size = 1000; size <= 1000000; size *= 300) {
     printf("== size = %zu \n", size);
     if(!testbinaryfuse8(size, 0)) { abort(); }
