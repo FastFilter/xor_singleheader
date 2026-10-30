@@ -332,7 +332,7 @@ static inline bool binary_fuse8_populate(uint64_t *keys, uint32_t size,
     for (uint32_t i = 0; i < block; i++) {
       // important : i * size would overflow as a 32-bit number in some
       // cases.
-      startPos[i] = (uint32_t)((uint64_t)i * size) >> blockBits;
+      startPos[i] = (uint32_t)(((uint64_t)i * size) >> blockBits);
     }
 
     uint64_t maskblock = block - 1;
